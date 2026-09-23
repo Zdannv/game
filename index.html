@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Falicya's Love Quest 💖</title>
+  <meta name="description" content="Game kecil penuh cinta, khusus buat Falicya.">
+  <meta name="theme-color" content="#ffd6e7">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>💖</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="bg-hearts" aria-hidden="true"></div>
+
+  <main id="app">
+    <!-- HOME -->
+    <section id="screen-home" class="screen active">
+      <div class="home-wrap">
+        <div class="mascots" aria-hidden="true"><span>🦉</span><span>💖</span><span>🐱</span></div>
+        <h1 class="title"><span class="nm">Falicya</span>'s<br><span class="title-2">Love Quest</span></h1>
+        <button class="btn big" id="btn-play">Main yuk! ▶</button>
+        <button class="link-btn" id="btn-reset">reset progress</button>
+      </div>
+    </section>
+
+    <!-- PETA LEVEL -->
+    <section id="screen-map" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" data-go="home" aria-label="Beranda">🏠</button>
+        <div class="star-total">⭐ <span id="star-count">0</span></div>
+        <button class="icon-btn" id="btn-sound" aria-label="Suara">🔊</button>
+      </header>
+      <div id="worlds"></div>
+    </section>
+
+    <!-- GAME -->
+    <section id="screen-game" class="screen">
+      <header class="hud">
+        <button class="icon-btn small" id="btn-quit" aria-label="Keluar">✖</button>
+        <div class="hud-main">
+          <div class="hud-title" id="hud-title"></div>
+          <div class="hud-stats" id="hud-stats"></div>
+        </div>
+      </header>
+      <p class="hint" id="hud-hint"></p>
+      <div id="stage"></div>
+    </section>
+
+    <!-- SURAT -->
+    <section id="screen-letter" class="screen">
+      <article class="letter">
+        <div class="letter-seal">💌</div>
+        <h2>To <span class="nm">Falicya</span></h2>
+        <div class="letter-body" id="letter-body"></div>
+        <p class="letter-sign">— <span id="letter-from"></span> 💖</p>
+      </article>
+      <button class="btn" data-go="map">Kembali ke peta</button>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card"></div>
+  </div>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
