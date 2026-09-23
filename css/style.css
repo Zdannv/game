@@ -332,6 +332,33 @@ button:disabled { cursor: default; }
   font-size: 50px; animation: hop 1.5s infinite;
 }
 .letter h2 { font-family: 'Caveat', cursive; font-size: 40px; margin: 0 0 8px; color: var(--pink-deep); text-align: center; }
+.polaroids {
+  position: relative; display: flex; justify-content: center; align-items: flex-start;
+  gap: 4px; margin: 10px 0 30px;
+}
+.polaroid {
+  margin: 0; width: min(42%, 170px); background: #fff; padding: 8px 8px 0;
+  border-radius: 4px; box-shadow: 0 8px 18px rgba(106, 44, 82, .22);
+  animation: dropIn .7s backwards cubic-bezier(.3, 1.5, .5, 1);
+}
+.polaroid img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 2px; }
+.polaroid figcaption {
+  font-family: 'Caveat', cursive; font-size: 22px; text-align: center; padding: 4px 0 6px; color: var(--ink);
+}
+.polaroid.left { --tilt: -7deg; transform: rotate(var(--tilt)); }
+.polaroid.right { --tilt: 6deg; transform: rotate(var(--tilt)) translateY(14px); animation-delay: .25s; }
+.polaroid::before {
+  content: ''; position: absolute; top: -10px; left: 50%; width: 56px; height: 20px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(255, 182, 213, .75); border-radius: 2px;
+}
+.polaroid { position: relative; }
+.polaroid-heart {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  font-size: 40px; z-index: 2; animation: hop 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 3px 4px rgba(106, 44, 82, .25));
+}
+@keyframes dropIn { from { opacity: 0; transform: translateY(-40px) rotate(0); } }
 .letter-body p {
   font-family: 'Caveat', cursive; font-size: 24px; line-height: 34px; margin: 0 0 34px;
   animation: fadeIn .8s backwards;
