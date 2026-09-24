@@ -1,7 +1,10 @@
-// Tangkap Cinta: geser keranjang untuk menangkap barang lucu, hindari 💔.
+// Tangkap Cinta: kucing bawa keranjang, tangkap barang lucu, hindari 💔.
+// Sesekali kepala Aidan Jr jatuh: +10 poin!
 import { rand, pick, starsFor } from '../util.js';
 
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const aidanImg = new Image();
+aidanImg.src = 'img/aidan-head.jpg';
 
 export function startCatch(stage, p, api) {
   const canvas = document.createElement('canvas');
@@ -27,8 +30,9 @@ export function startCatch(stage, p, api) {
   player.x = player.tx = W / 2;
 
   let items = [], floats = [];
-  let score = 0, lives = p.lives, t = 0, spawnIn = 0.4, done = false, raf = 0;
-  let last = performance.now(), shakeT = 0, hurtT = 0, lastStats = '';
+  let score = 0, lives = p.lives, t = 0, spawnIn = 0.4, done = false, raf = 0, aidanIn = 6 + Math.random() * 6;
+  let last = performance.now(), shakeT = 0, hurtT = 0, lastStats = '', warned = false;
+  const pickOuch = () => pick(['Aduh! Hati-hati Fall 🥺', 'Eh eh itu bukan hati 😵', 'Jangan ditangkep yang itu 😭']);
   const keys = {};
 
   const onPointer = (e) => {
@@ -48,6 +52,15 @@ export function startCatch(stage, p, api) {
   window.addEventListener('resize', resize);
 
   function spawn() {
+    if (t >= aidanIn && t < p.time - 2) {
+      aidanIn = t + 9 + Math.random() * 7;
+      const size = 58 * k;
+      items.push({
+        x: rand(size / 2 + 8, W - size / 2 - 8), y: -size, vy: (p.speed * 1.35 + t * 2.5) * k,
+        kind: 'aidan', pts: 10, size, rot: 0, vr: rand(-3, 3), sway: rand(0, 6.28),
+      });
+      return;
+    }
     const r = Math.random();
     let kind = 'good', em = pick(p.good), pts = 1;
     if (r < p.badRate) { kind = 'bad'; em = pick(p.bad); }
@@ -73,12 +86,26 @@ export function startCatch(stage, p, api) {
       hurtT = 0.6;
       api.sfx('bad');
       addFloat(it.x, it.y - 20, 'Aduh!', '#ff4d6d');
+      api.streak(false);
+      api.vibrate(90);
+      api.say(pickOuch(), 'sad');
       if (lives <= 0) end(false, 'lives');
     } else {
       score += it.pts;
       player.squash = 1;
-      api.sfx(it.kind === 'gold' ? 'gold' : 'good');
-      addFloat(it.x, it.y - 20, `+${it.pts}`, it.kind === 'gold' ? '#e0a800' : '#ff5c93');
+      api.sfx(it.kind === 'good' ? 'good' : 'gold');
+      if (it.kind === 'aidan') {
+        addFloat(it.x, it.y - 30, '+10 Aidan Jr! 😆', '#9a6bff');
+        api.say('HAHAHA itu Aidan Jr 😂 +10!', 'happy');
+        api.vibrate([30, 40, 30]);
+      } else {
+        addFloat(it.x, it.y - 20, `+${it.pts}`, it.kind === 'gold' ? '#e0a800' : '#ff5c93');
+      }
+      const combo = api.streak(true);
+      if (combo && combo % 5 === 0) {
+        score += 2;
+        addFloat(player.x, H - player.size * 2, 'Bonus +2 🔥', '#ff8a00');
+      }
     }
   }
 
@@ -108,7 +135,11 @@ export function startCatch(stage, p, api) {
         catchIt(it);
       }
     }
+    for (const it of items) {
+      if (!it.gone && !it.missed && it.kind !== 'bad' && it.y > H + 20) { it.missed = true; api.streak(false); }
+    }
     items = items.filter((it) => !it.gone && it.y < H + 60);
+    if (!warned && left <= 10) { warned = true; api.say('10 detik lagi! Gaspol Fall! ⏰', 'happy'); }
     for (const f of floats) { f.y -= 45 * dt; f.life -= dt * 1.2; }
     floats = floats.filter((f) => f.life > 0);
     player.squash = Math.max(0, player.squash - dt * 5);
@@ -131,6 +162,24 @@ export function startCatch(stage, p, api) {
       ctx.save();
       ctx.translate(it.x, it.y);
       ctx.rotate(it.rot);
+      if (it.kind === 'aidan') {
+        const r = it.size / 2;
+        ctx.shadowColor = '#c7a8ff';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.clip();
+        if (aidanImg.complete && aidanImg.naturalWidth) ctx.drawImage(aidanImg, -r, -r, r * 2, r * 2);
+        ctx.restore();
+        ctx.restore();
+        continue;
+      }
       if (it.kind === 'gold') { ctx.shadowColor = '#fff27a'; ctx.shadowBlur = 20; }
       ctx.font = `${it.size}px ${EMOJI_FONT}`;
       ctx.fillText(it.em, 0, 0);
@@ -154,8 +203,10 @@ export function startCatch(stage, p, api) {
     ctx.arc(0, 0, player.size * 0.62, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.font = `${player.size}px ${EMOJI_FONT}`;
-    ctx.fillText(p.player, 0, 0);
+    ctx.font = `${player.size * 0.62}px ${EMOJI_FONT}`;
+    ctx.fillText('🐱', 0, -player.size * 0.42);
+    ctx.font = `${player.size * 0.9}px ${EMOJI_FONT}`;
+    ctx.fillText(p.player, 0, player.size * 0.08);
     ctx.restore();
 
     ctx.font = `700 ${Math.round(24 * k)}px Fredoka, sans-serif`;

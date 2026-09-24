@@ -15,6 +15,20 @@ Semua teks ada di `js/config.js`:
 - `quiz`: 12 soal kuis (ganti dengan kenangan kalian!)
 - `finalLetter`: surat penutup
 
+## Streak couple (Supabase)
+
+1. Buat project gratis di supabase.com.
+2. Buka **SQL Editor → New query**, paste isi `supabase/schema.sql`, lalu **Run**.
+3. Buka **Project Settings → API**, salin **Project URL** dan **anon public** (atau **publishable**) key.
+4. Isi `supabase.url` dan `supabase.anonKey` di `js/config.js`.
+
+Tiap HP pilih sekali "Aku Fall" atau "Aku Aidan". Streak bertambah tiap hari (WIB) kalau dua-duanya menyelesaikan minimal satu level.
+Kalau config Supabase dikosongkan, kartu streak disembunyikan dan game tetap jalan normal.
+
+## Mode tes
+
+Tambahkan `?bukasemua` di akhir link untuk membuka semua level.
+
 ## Jalankan lokal
 
 ```bash

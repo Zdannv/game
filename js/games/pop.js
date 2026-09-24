@@ -1,4 +1,4 @@
-// Tap si Imut: hewan lucu muncul dari lubang, tap secepatnya. Jangan tap lebah!
+// Tap si Imut: owl & kucing muncul dari lubang, tap secepatnya. Jangan tap lebah!
 import { rand, pick, starsFor, floatText, shake } from '../util.js';
 
 export function startPop(stage, p, api) {
@@ -39,7 +39,10 @@ export function startPop(stage, p, api) {
     h.el.classList.add('up');
     api.sfx('pop');
     const speedUp = 1 - 0.25 * Math.min(1, elapsed() / p.time);
-    h.timer = setTimeout(() => hide(h), p.stay * rand(0.85, 1.15) * speedUp);
+    h.timer = setTimeout(() => {
+      if (h.active && h.kind !== 'bad' && !done) api.streak(false);
+      hide(h);
+    }, p.stay * rand(0.85, 1.15) * speedUp);
   }
 
   function hide(h) {
@@ -56,12 +59,17 @@ export function startPop(stage, p, api) {
       api.sfx('bad');
       floatText(h.el, '-2', 'bad');
       shake(stage);
+      api.streak(false);
+      api.vibrate(90);
+      api.say(pick(['Aww disengat lebah 🐝😭', 'Eh itu lebah Fall! 😵', 'Lebahnya jangan dipencet 🥺']), 'sad');
     } else {
-      const pts = h.kind === 'gold' ? 3 : 1;
+      let pts = h.kind === 'gold' ? 3 : 1;
+      const combo = api.streak(true);
+      if (combo && combo % 5 === 0) pts += 2;
       score += pts;
       h.el.classList.add('hit');
       api.sfx(h.kind === 'gold' ? 'gold' : 'good');
-      floatText(h.el, `+${pts}`, h.kind === 'gold' ? 'gold' : '');
+      floatText(h.el, `+${pts}`, h.kind === 'gold' || pts > 3 ? 'gold' : '');
     }
     hide(h);
     stats();
@@ -81,8 +89,10 @@ export function startPop(stage, p, api) {
     api.setStats(`⏱ ${left}s · ⭐ ${score}/${p.target}`);
   }
 
+  let warned = false;
   const iv = setInterval(() => {
     stats();
+    if (!warned && p.time - elapsed() <= 10) { warned = true; api.say('10 detik lagi! Gaspol Fall! ⏰', 'happy'); }
     if (elapsed() >= p.time) end();
   }, 150);
 
