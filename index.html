@@ -6,6 +6,12 @@
   <title>Falicya's Love Quest 💖</title>
   <meta name="description" content="Game kecil penuh cinta, khusus buat Falicya.">
   <meta name="theme-color" content="#ffd6e7">
+  <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Love Quest">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>💖</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +27,9 @@
       <div class="home-wrap">
         <div class="mascots" aria-hidden="true"><span>🦉</span><span>💖</span><span>🐱</span></div>
         <h1 class="title"><span class="nm">Falicya</span>'s<br><span class="title-2">Love Quest</span></h1>
+        <div class="streak-slot" id="streak-home" hidden></div>
         <button class="btn big" id="btn-play">Main yuk! ▶</button>
+        <button class="btn ghost install-btn" id="btn-install" hidden>📲 Pasang ke home screen</button>
         <button class="link-btn" id="btn-reset">reset progress</button>
       </div>
     </section>
@@ -31,8 +39,12 @@
       <header class="topbar">
         <button class="icon-btn" data-go="home" aria-label="Beranda">🏠</button>
         <div class="star-total">⭐ <span id="star-count">0</span></div>
-        <button class="icon-btn" id="btn-sound" aria-label="Suara">🔊</button>
+        <div class="topbar-right">
+          <button class="icon-btn" id="btn-music" aria-label="Lagu">🎵</button>
+          <button class="icon-btn" id="btn-sound" aria-label="Efek suara">🔊</button>
+        </div>
       </header>
+      <div class="streak-slot" id="streak-map" hidden></div>
       <div id="worlds"></div>
     </section>
 
@@ -45,7 +57,10 @@
           <div class="hud-stats" id="hud-stats"></div>
         </div>
       </header>
-      <p class="hint" id="hud-hint"></p>
+      <div class="guide">
+        <span class="guide-owl" id="guide-owl" aria-hidden="true">🦉</span>
+        <p class="bubble" id="hud-hint" aria-live="polite"></p>
+      </div>
       <div id="stage"></div>
     </section>
 
@@ -76,6 +91,7 @@
     <div class="modal-card"></div>
   </div>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
 
   <script type="module" src="js/main.js"></script>

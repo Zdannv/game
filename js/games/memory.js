@@ -44,9 +44,11 @@ export function startMemory(stage, p, api) {
       first = second = null;
       matched++;
       api.sfx('good');
+      api.streak(true);
       stats();
       if (matched === p.pairs) end(true);
     } else {
+      api.streak(false);
       lock = true;
       const a = first, b = second;
       setTimeout(() => {

@@ -1,7 +1,11 @@
 // Efek suara kecil yang dibuat langsung dengan Web Audio (tanpa file audio).
 let ctx = null;
-let muted = false;
-try { muted = localStorage.getItem('fq-muted') === '1'; } catch {}
+let muted = false;      // efek suara game
+let musicOff = false;   // lagu latar
+try {
+  muted = localStorage.getItem('fq-muted') === '1';
+  musicOff = localStorage.getItem('fq-music-off') === '1';
+} catch {}
 
 function ac() {
   if (!ctx) {
@@ -37,6 +41,10 @@ const SFX = {
   gold: () => [880, 1109, 1319, 1760].forEach((f, i) => tone(f, 0.12, 'sine', 0.12, i * 0.05)),
   bad: () => tone(220, 0.25, 'sawtooth', 0.07, 0, 0.6),
   pop: () => tone(900, 0.06, 'square', 0.04, 0, 0.5),
+  note0: () => tone(523, 0.28, 'triangle', 0.14),
+  note1: () => tone(659, 0.28, 'triangle', 0.14),
+  note2: () => tone(784, 0.28, 'triangle', 0.14),
+  note3: () => tone(988, 0.28, 'triangle', 0.14),
   tick: () => tone(1000, 0.06, 'square', 0.05),
   go: () => { tone(1320, 0.18, 'triangle', 0.1); },
   win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.13, i * 0.11)),
@@ -55,7 +63,7 @@ bgm.volume = 0.45;
 bgm.preload = 'auto';
 
 function syncMusic() {
-  if (muted || document.hidden) bgm.pause();
+  if (musicOff || document.hidden) bgm.pause();
   else bgm.play().catch(() => {});
 }
 
@@ -73,6 +81,14 @@ export const isMuted = () => muted;
 export function toggleMute() {
   muted = !muted;
   try { localStorage.setItem('fq-muted', muted ? '1' : '0'); } catch {}
-  syncMusic();
   return muted;
+}
+
+export const isMusicOff = () => musicOff;
+
+export function toggleMusic() {
+  musicOff = !musicOff;
+  try { localStorage.setItem('fq-music-off', musicOff ? '1' : '0'); } catch {}
+  syncMusic();
+  return musicOff;
 }
