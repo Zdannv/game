@@ -1,3 +1,5 @@
+import { drawEmoji } from './util.js';
+
 const canvas = document.getElementById('confetti');
 const ctx = canvas.getContext('2d');
 const COLORS = ['#ff8fb8', '#ffd166', '#b8a1ff', '#7fdcc0', '#ff6f91'];
@@ -47,10 +49,7 @@ export function confetti(amount = 90) {
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
         if (p.emoji) {
-          ctx.font = `${p.size}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(p.emoji, 0, 0);
+          drawEmoji(ctx, p.emoji, 0, 0, p.size);
         } else {
           ctx.fillStyle = p.color;
           ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);

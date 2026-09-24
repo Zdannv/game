@@ -555,3 +555,7 @@ button:disabled { cursor: default; }
 [data-theme="w-home"] .back { background: repeating-linear-gradient(135deg, #c9a8ff 0 10px, #e3d3ff 10px 20px); }
 [data-theme="w-home"] .hole::after { background: #ffd1a8; box-shadow: inset 0 5px 0 #ffe6cf, 0 3px 0 #e6a676; }
 
+
+/* Hemat tenaga HP saat main */
+body.playing #bg-hearts { display: none; }
+.guide-owl.happy { animation: owlBump .5s cubic-bezier(.3, 1.8, .5, 1), hop 1s .5s ease-in-out 2; }

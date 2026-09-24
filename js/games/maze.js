@@ -1,6 +1,6 @@
 // Labirin Cinta: tarik garis pakai jari dari muka Fall Jr (kiri atas) sampai ke muka Aidan Jr (kanan bawah).
 // Labirinnya acak tiap main. Salah jalan? Tarik garisnya mundur aja.
-import { setupCanvas, drawFace, loadImage, EMOJI_FONT } from '../util.js';
+import { setupCanvas, drawFace, drawEmoji, loadImage } from '../util.js';
 
 // Bikin labirin pakai "recursive backtracker": walls[r][c] = { n, e, s, w } (true = ada tembok)
 function makeMaze(cols, rows) {
@@ -123,7 +123,6 @@ export function startMaze(stage, p, api) {
     wonAt = performance.now();
     api.sfx('win');
     api.streak(true);
-    api.vibrate([30, 40, 30]);
     api.say('Ketemu! 💞', 'happy');
     setTimeout(() => end(true), 1100);
   }
@@ -188,11 +187,8 @@ export function startMaze(stage, p, api) {
 
     if (won) {
       const k = Math.min(1, (now - wonAt) / 400);
-      ctx.font = `${Math.round(L.cell * (0.8 + k * 0.6))}px ${EMOJI_FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
       ctx.globalAlpha = k;
-      ctx.fillText('💞', g.x - meet, g.y - L.cell * 0.9);
+      drawEmoji(ctx, '💞', g.x - meet, g.y - L.cell * 0.9, L.cell * (0.8 + k * 0.6));
       ctx.globalAlpha = 1;
     }
 

@@ -47,26 +47,69 @@ export function loadImage(src) {
   return imageCache.get(src);
 }
 
-// Gambar muka bulat (foto) dengan bingkai putih. Kalau fotonya belum siap, pakai emoji cadangan.
-export function drawFace(ctx, img, x, y, r, fallbackEmoji = '💖', ring = '#fff') {
-  ctx.save();
-  if (img && img.complete && img.naturalWidth) {
-    ctx.fillStyle = ring;
-    ctx.beginPath();
-    ctx.arc(x, y, r + 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.clip();
-    const side = Math.min(img.naturalWidth, img.naturalHeight);
-    ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, x - r, y - r, r * 2, r * 2);
-  } else {
-    ctx.font = `${r * 2}px ${EMOJI_FONT}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(fallbackEmoji, x, y);
+// ---------- Gambar emoji & muka yang sudah "dicetak" sekali ----------
+// Menggambar emoji pakai fillText tiap frame itu berat di HP (bikin patah-patah),
+// jadi tiap emoji/muka dicetak sekali ke canvas kecil, lalu tinggal ditempel (drawImage).
+const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+const sprites = new Map();
+
+function emojiSprite(emoji, size) {
+  const px = Math.max(8, Math.round(size));
+  const key = `e|${emoji}|${px}`;
+  let c = sprites.get(key);
+  if (!c) {
+    const box = Math.ceil(px * 1.3);
+    c = document.createElement('canvas');
+    c.width = c.height = Math.ceil(box * DPR());
+    const x = c.getContext('2d');
+    x.scale(DPR(), DPR());
+    x.font = `${px}px ${EMOJI_FONT}`;
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText(emoji, box / 2, box / 2 + px * 0.05);
+    c.box = box;
+    sprites.set(key, c);
   }
-  ctx.restore();
+  return c;
+}
+
+// Tempel emoji dengan titik tengah di (x, y)
+export function drawEmoji(ctx, emoji, x, y, size) {
+  const s = emojiSprite(emoji, size);
+  ctx.drawImage(s, x - s.box / 2, y - s.box / 2, s.box, s.box);
+}
+
+// Muka bulat (foto) dengan bingkai. Kalau fotonya belum siap, pakai emoji cadangan.
+export function drawFace(ctx, img, x, y, r, fallbackEmoji = '💖', ring = '#fff') {
+  if (!(img && img.complete && img.naturalWidth)) {
+    drawEmoji(ctx, fallbackEmoji, x, y, r * 2);
+    return;
+  }
+  const rr = Math.max(4, Math.round(r));
+  const key = `f|${img.src}|${rr}|${ring}`;
+  let c = sprites.get(key);
+  if (!c) {
+    const box = rr * 2 + 8;
+    c = document.createElement('canvas');
+    c.width = c.height = Math.ceil(box * DPR());
+    const g = c.getContext('2d');
+    g.scale(DPR(), DPR());
+    const m = box / 2;
+    g.fillStyle = ring;
+    g.beginPath();
+    g.arc(m, m, rr + 3, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.arc(m, m, rr, 0, Math.PI * 2);
+    g.clip();
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, m - rr, m - rr, rr * 2, rr * 2);
+    c.box = box;
+    sprites.set(key, c);
+  }
+  const scale = r / rr;
+  const b = c.box * scale;
+  ctx.drawImage(c, x - b / 2, y - b / 2, b, b);
 }
 
 // Siapkan canvas seukuran stage (tajam di layar HP)

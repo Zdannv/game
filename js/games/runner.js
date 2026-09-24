@@ -1,6 +1,6 @@
 // Lari Lompat: karakter (atau muka!) lari terus, tap buat lompat lewati rintangan & ambil 💖.
 // Bertahan sampai waktunya habis. Nabrak = kedip & nyawa berkurang (santai, nggak langsung kalah).
-import { setupCanvas, EMOJI_FONT, drawFace, loadImage, rand, pick } from '../util.js';
+import { setupCanvas, drawEmoji, drawFace, loadImage, rand, pick } from '../util.js';
 
 export function startRunner(stage, p, api) {
   const { canvas, ctx, size, dispose } = setupCanvas(stage);
@@ -38,7 +38,6 @@ export function startRunner(stage, p, api) {
     lives--;
     hurtT = 1.3;
     api.sfx('bad');
-    api.vibrate(90);
     api.streak(false);
     api.say('Aduh kesandung 😵', 'sad');
     floats.push({ x: rx(), y: groundY() + runner.y - 60, text: 'Aduh!', color: '#ff4d6d', life: 1 });
@@ -99,9 +98,8 @@ export function startRunner(stage, p, api) {
     ctx.clearRect(0, 0, W, H);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `${34 * k}px ${EMOJI_FONT}`;
     ctx.globalAlpha = 0.8;
-    for (const c of clouds) ctx.fillText('☁️', c.x, c.y);
+    for (const c of clouds) drawEmoji(ctx, '☁️', c.x, c.y, 34 * k);
     ctx.globalAlpha = 1;
 
     // tanah
@@ -110,8 +108,8 @@ export function startRunner(stage, p, api) {
     ctx.fillStyle = '#9fd66f';
     for (let x = -(scroll % 40); x < W; x += 40) ctx.fillRect(x, groundY(), 20, 6 * k);
 
-    for (const h of hearts) { ctx.font = `${26 * k}px ${EMOJI_FONT}`; ctx.fillText('💖', h.x, h.y); }
-    for (const o of obstacles) { ctx.font = `${o.size}px ${EMOJI_FONT}`; ctx.fillText(o.em, o.x, groundY() - o.size / 2); }
+    for (const h of hearts) drawEmoji(ctx, '💖', h.x, h.y, 26 * k);
+    for (const o of obstacles) drawEmoji(ctx, o.em, o.x, groundY() - o.size / 2, o.size);
 
     const r = R();
     const ry = groundY() + runner.y - r;

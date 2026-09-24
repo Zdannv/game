@@ -221,6 +221,7 @@ const modal = $('#modal');
 
 function show(name) {
   Object.entries(screens).forEach(([k, el]) => el.classList.toggle('active', k === name));
+  document.body.classList.toggle('playing', name === 'game');
   if (name === 'map') renderMap();
   if (name === 'home' || name === 'map') refreshStreak();
   if (name === 'letter') renderLetter();
@@ -331,13 +332,6 @@ function owlHint() {
   owlEl.className = 'guide-owl';
 }
 
-function vibrate(pattern) {
-  try {
-    if (navigator.userActivation?.hasBeenActive === false) return;
-    navigator.vibrate?.(pattern);
-  } catch {}
-}
-
 function showCombo(n) {
   const el = document.createElement('div');
   el.className = `combo-pop ${n % 5 === 0 ? 'big' : ''}`;
@@ -367,7 +361,6 @@ function startLevel(i) {
   const api = {
     setStats: (s) => { if (live()) $('#hud-stats').textContent = s; },
     sfx,
-    vibrate,
     say: (text, mood) => { if (live()) owlSay(text, mood); },
     streak: (ok) => {
       if (!live()) return 0;
@@ -376,11 +369,8 @@ function startLevel(i) {
       if (combo >= 3) {
         showCombo(combo);
         if (combo % 5 === 0) {
-          vibrate([40, 30, 40]);
           sfx('gold');
           owlSay(`Hoot!! Combo x${combo}! 🔥`, 'happy', 1600);
-        } else {
-          vibrate(25);
         }
       }
       return combo;
@@ -673,6 +663,11 @@ if ('serviceWorker' in navigator) {
 
 let installPrompt = null;
 const installBtn = $('#btn-install');
+const isStandaloneApp = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+if (/Android/i.test(navigator.userAgent) && !isStandaloneApp) {
+  // Chrome kadang nggak langsung nawarin install; tombolnya tetap muncul, isinya petunjuk manual
+  installBtn.hidden = false;
+}
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   installPrompt = e;
@@ -680,7 +675,10 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 installBtn.addEventListener('click', async () => {
   sfx('click');
-  if (!installPrompt) return;
+  if (!installPrompt) {
+    toast('Buka menu ⋮ di pojok kanan atas Chrome, terus pilih "Instal aplikasi" / "Tambahkan ke Layar utama" 📲');
+    return;
+  }
   installPrompt.prompt();
   await installPrompt.userChoice.catch(() => {});
   installPrompt = null;

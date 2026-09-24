@@ -1,10 +1,8 @@
 // Tangkap Cinta: kucing bawa keranjang, tangkap barang lucu, hindari 💔.
 // Sesekali kepala Aidan Jr jatuh: +10 poin!
-import { rand, pick, starsFor } from '../util.js';
+import { rand, pick, starsFor, drawEmoji, drawFace, loadImage } from '../util.js';
 
-const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-const aidanImg = new Image();
-aidanImg.src = 'img/aidan-head.jpg';
+const aidanImg = loadImage('img/aidan-head.jpg');
 
 export function startCatch(stage, p, api) {
   const canvas = document.createElement('canvas');
@@ -87,7 +85,6 @@ export function startCatch(stage, p, api) {
       api.sfx('bad');
       addFloat(it.x, it.y - 20, 'Aduh!', '#ff4d6d');
       api.streak(false);
-      api.vibrate(90);
       api.say(pickOuch(), 'sad');
       if (lives <= 0) end(false, 'lives');
     } else {
@@ -97,7 +94,6 @@ export function startCatch(stage, p, api) {
       if (it.kind === 'aidan') {
         addFloat(it.x, it.y - 30, '+10 Aidan Jr! 😆', '#9a6bff');
         api.say('HAHAHA itu Aidan Jr 😂 +10!', 'happy');
-        api.vibrate([30, 40, 30]);
       } else {
         addFloat(it.x, it.y - 20, `+${it.pts}`, it.kind === 'gold' ? '#e0a800' : '#ff5c93');
       }
@@ -163,26 +159,22 @@ export function startCatch(stage, p, api) {
       ctx.translate(it.x, it.y);
       ctx.rotate(it.rot);
       if (it.kind === 'aidan') {
-        const r = it.size / 2;
-        ctx.shadowColor = '#c7a8ff';
-        ctx.shadowBlur = 18;
-        ctx.fillStyle = '#fff';
+        // lingkaran ungu tipis sebagai "cahaya" (lebih ringan daripada shadowBlur)
+        ctx.fillStyle = 'rgba(199, 168, 255, .45)';
         ctx.beginPath();
-        ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+        ctx.arc(0, 0, it.size / 2 + 9, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.clip();
-        if (aidanImg.complete && aidanImg.naturalWidth) ctx.drawImage(aidanImg, -r, -r, r * 2, r * 2);
-        ctx.restore();
+        drawFace(ctx, aidanImg, 0, 0, it.size / 2, '😘', '#fff');
         ctx.restore();
         continue;
       }
-      if (it.kind === 'gold') { ctx.shadowColor = '#fff27a'; ctx.shadowBlur = 20; }
-      ctx.font = `${it.size}px ${EMOJI_FONT}`;
-      ctx.fillText(it.em, 0, 0);
+      if (it.kind === 'gold') {
+        ctx.fillStyle = 'rgba(255, 242, 122, .5)';
+        ctx.beginPath();
+        ctx.arc(0, 0, it.size * 0.62, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      drawEmoji(ctx, it.em, 0, 0, it.size);
       ctx.restore();
     }
 
@@ -203,10 +195,8 @@ export function startCatch(stage, p, api) {
     ctx.arc(0, 0, player.size * 0.62, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.font = `${player.size * 0.62}px ${EMOJI_FONT}`;
-    ctx.fillText('🐱', 0, -player.size * 0.42);
-    ctx.font = `${player.size * 0.9}px ${EMOJI_FONT}`;
-    ctx.fillText(p.player, 0, player.size * 0.08);
+    drawEmoji(ctx, '🐱', 0, -player.size * 0.42, player.size * 0.62);
+    drawEmoji(ctx, p.player, 0, player.size * 0.08, player.size * 0.9);
     ctx.restore();
 
     ctx.font = `700 ${Math.round(24 * k)}px Fredoka, sans-serif`;

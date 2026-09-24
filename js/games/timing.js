@@ -49,7 +49,6 @@ export function startTiming(stage, p, api) {
     } else {
       lives--;
       api.sfx('bad');
-      api.vibrate(80);
       api.streak(false);
       shake(bar);
       targetEl.textContent = '💔';

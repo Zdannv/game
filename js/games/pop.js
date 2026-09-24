@@ -60,7 +60,6 @@ export function startPop(stage, p, api) {
       floatText(h.el, '-2', 'bad');
       shake(stage);
       api.streak(false);
-      api.vibrate(90);
       api.say(pick(['Aww disengat lebah 🐝😭', 'Eh itu lebah Fall! 😵', 'Lebahnya jangan dipencet 🥺']), 'sad');
     } else {
       let pts = h.kind === 'gold' ? 3 : 1;

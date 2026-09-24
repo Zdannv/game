@@ -49,7 +49,6 @@ export function startOdd(stage, p, api) {
       floatText(cell, '-3s', 'bad');
       shake(wrap);
       api.sfx('bad');
-      api.vibrate(80);
       api.streak(false);
     }
   });

@@ -1,6 +1,6 @@
 // Lempar Hati: target (muka!) geser kiri-kanan di atas, tap buat lempar 💖 lurus ke atas.
 // Kena target sejumlah `target` sebelum lemparan habis.
-import { setupCanvas, EMOJI_FONT, drawFace, loadImage, pick } from '../util.js';
+import { setupCanvas, drawEmoji, drawFace, loadImage, pick } from '../util.js';
 
 const HIT_LINES = ['Kena! 😘', 'Tepat sasaran 💘', 'Aww kena hati 🥰', 'Mantap! 💖'];
 
@@ -47,7 +47,6 @@ export function startThrow(stage, p, api) {
           target.wobble = 1;
           api.sfx('good');
           api.streak(true);
-          api.vibrate(30);
           floats.push({ x: target.x, y: targetY() - R() - 10, text: pick(HIT_LINES), color: '#ff5c93', life: 1 });
           if (hits >= p.target) end(true);
         } else {
@@ -87,12 +86,11 @@ export function startThrow(stage, p, api) {
     drawFace(ctx, face, 0, 0, R(), p.emoji || '😘', '#ffd1e3');
     ctx.restore();
 
-    for (const h of hearts) { ctx.font = `${30 * k}px ${EMOJI_FONT}`; ctx.fillText('💖', h.x, h.y); }
+    for (const h of hearts) drawEmoji(ctx, '💖', h.x, h.y, 30 * k);
 
     // pelontar
     const left = p.throws - thrown;
-    ctx.font = `${44 * k}px ${EMOJI_FONT}`;
-    if (left > 0) ctx.fillText('💘', W / 2, launchY());
+    if (left > 0) drawEmoji(ctx, '💘', W / 2, launchY(), 44 * k);
     ctx.font = `600 ${Math.round(15 * k)}px Fredoka, sans-serif`;
     ctx.fillStyle = '#a0678a';
     ctx.fillText(`sisa lemparan: ${left}`, W / 2, launchY() + 38 * k);

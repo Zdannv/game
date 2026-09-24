@@ -1,6 +1,6 @@
 // Susun Kue: lapisan kue geser kiri-kanan, tap buat jatuhin. Bagian yang meleset kepotong.
 // Pas banget (perfect) = lebarnya balik sedikit. Meleset total = nyawa berkurang.
-import { setupCanvas, EMOJI_FONT } from '../util.js';
+import { setupCanvas, drawEmoji } from '../util.js';
 
 const COLORS = ['#ffb3cf', '#ffe29a', '#b8e6ff', '#c9b8ff', '#b9f0d2', '#ffc8a8'];
 
@@ -35,7 +35,6 @@ export function startStack(stage, p, api) {
     if (overlap <= 0) {
       lives--;
       api.sfx('bad');
-      api.vibrate(90);
       api.streak(false);
       api.say('Yahh meleset 😵 hati-hati yaa', 'sad');
       falling.push({ x: moving.x, y: 0, w: moving.w, vy: 0, color: moving.color, level: placed() + 1 });
@@ -99,10 +98,7 @@ export function startStack(stage, p, api) {
     ctx.fillStyle = 'rgba(255,255,255,.75)';
     ctx.fillRect(x + 4, y + 3, Math.max(0, w - 8), 5 * size.k);
     if (isTop && w > 30) {
-      ctx.font = `${22 * size.k}px ${EMOJI_FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText('🍓', x + w / 2, y + 4);
+      drawEmoji(ctx, '🍓', x + w / 2, y - 6 * size.k, 22 * size.k);
     }
   }
 

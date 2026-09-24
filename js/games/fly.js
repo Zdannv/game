@@ -1,8 +1,6 @@
 // Owl Terbang: tap buat bikin owl terbang, lewati tiang bunga dan ambil 💖.
 // Dibuat santai: 3 nyawa, dan kalau nabrak owl cuma kedip lalu lanjut terbang.
-import { rand, drawFace, loadImage } from '../util.js';
-
-const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+import { rand, drawFace, drawEmoji, loadImage } from '../util.js';
 
 export function startFly(stage, p, api) {
   const face = loadImage(p.face);
@@ -58,7 +56,6 @@ export function startFly(stage, p, api) {
     hurtT = 1.4;
     owl.vy = -200 * k;
     api.sfx('bad');
-    api.vibrate(90);
     api.streak(false);
     api.say('Aduh nabrak 😵 hati-hati Fall!', 'sad');
     addFloat(owl.x, owl.y - 30, 'Aduh!', '#ff4d6d');
@@ -115,8 +112,7 @@ export function startFly(stage, p, api) {
     else ctx.rect(x, y, pillarW, h);
     ctx.fill();
     ctx.stroke();
-    ctx.font = `${26 * k}px ${EMOJI_FONT}`;
-    ctx.fillText('🌸', x + pillarW / 2, capAtBottom ? y + h - 16 * k : y + 16 * k);
+    drawEmoji(ctx, '🌸', x + pillarW / 2, capAtBottom ? y + h - 16 * k : y + 16 * k, 26 * k);
   }
 
   function draw() {
@@ -127,8 +123,7 @@ export function startFly(stage, p, api) {
       drawPillar(pl.x, -20, pl.gy - pl.gap / 2 + 20, true);
       drawPillar(pl.x, pl.gy + pl.gap / 2, H - (pl.gy + pl.gap / 2) + 20, false);
     }
-    ctx.font = `${26 * k}px ${EMOJI_FONT}`;
-    for (const h of hearts) ctx.fillText('💖', h.x, h.y + Math.sin((h.x + performance.now() / 5) / 30) * 4);
+    for (const h of hearts) drawEmoji(ctx, '💖', h.x, h.y + Math.sin((h.x + performance.now() / 5) / 30) * 4, 26 * k);
 
     ctx.save();
     ctx.translate(owl.x, owl.y);
@@ -137,8 +132,7 @@ export function startFly(stage, p, api) {
     if (face) {
       drawFace(ctx, face, 0, 0, owl.size * 0.5, '🦉');
     } else {
-      ctx.font = `${owl.size}px ${EMOJI_FONT}`;
-      ctx.fillText('🦉', 0, 0);
+      drawEmoji(ctx, '🦉', 0, 0, owl.size);
     }
     ctx.restore();
 

@@ -76,7 +76,6 @@ export function startSimon(stage, p, api) {
       lives--;
       mistakes++;
       api.sfx('bad');
-      api.vibrate(90);
       api.streak(false);
       b.classList.add('wrong');
       later(() => b.classList.remove('wrong'), 400);
