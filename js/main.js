@@ -15,7 +15,7 @@ import { startRunner } from './games/runner.js';
 import { startThrow } from './games/throw.js';
 import { startMaze } from './games/maze.js';
 import { startTiming } from './games/timing.js';
-import { streakEnabled, getPlayer, setPlayer, recordPlay, loadStreak, notifyPlayed, pushState, enablePush, setBadge } from './streak.js';
+import { streakEnabled, getPlayer, setPlayer, recordPlay, flushPlays, pendingPlays, loadStreak, notifyPlayed, pushState, enablePush, setBadge } from './streak.js';
 
 // ---------- Dunia & level ----------
 const OWL_CAT = ['🦉', '🐱'];
@@ -434,7 +434,7 @@ function onFinish(token, r) {
   if (current?.token !== token) return;
   const L = LEVELS[current.i];
   recordPlay()
-    .then((isNew) => { if (isNew) { refreshStreak(true); notifyPlayed(); } })
+    .then((isNew) => { if (isNew) { refreshStreak(true); if (!pendingPlays()) notifyPlayed(); } })
     .catch(() => {});
   if (r.win) {
     progress.stars[L.id] = Math.max(starsOf(L), r.stars);
@@ -562,6 +562,7 @@ function streakCard() {
       </div>
     </div>
     <p class="streak-msg">${streakMessage(me, d)}</p>
+    ${d.offline || pendingPlays() ? '<p class="push-note">📴 Lagi offline: main hari ini udah kecatat di HP, nanti otomatis kekirim pas online lagi</p>' : ''}
     <div class="streak-week">
       ${d.week.map((w, i) => `<div class="wk ${w.fall && w.aidan ? 'both' : ''} ${i === 6 ? 'today' : ''}"><span>${dot(w)}</span><small>${i === 6 ? 'Hari ini' : dayName(w.day)}</small></div>`).join('')}
     </div>
@@ -626,6 +627,15 @@ document.addEventListener('click', (e) => {
   }
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStreak(); });
+// Balik online: kirim catatan main yang tertunda, kabari pasangan, lalu segarkan streak
+window.addEventListener('online', async () => {
+  const sent = await flushPlays();
+  if (sent) {
+    notifyPlayed();
+    toast('📶 Online lagi! Main tadi udah kecatat di streak 💖');
+  }
+  refreshStreak();
+});
 
 // ---------- Notifikasi & pasang ke home screen ----------
 let push = 'unsupported';

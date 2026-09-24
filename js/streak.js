@@ -34,29 +34,80 @@ function api(path, init = {}) {
   });
 }
 
+// ---------- Main offline ----------
+// Catatan "sudah main" masuk antrean di HP dulu, lalu dikirim begitu ada internet.
+const QUEUE_KEY = 'fq-pending-plays';
+const ROWS_KEY = 'fq-streak-rows'; // salinan data streak terakhir, buat ditampilkan pas offline
+
+function readJSON(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+}
+function writeJSON(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
 // Catat bahwa pemain ini sudah main hari ini (sekali sehari cukup).
+// Balikannya true kalau ini catatan pertama hari ini (walaupun belum sempat terkirim).
 export async function recordPlay() {
   const player = getPlayer();
   if (!streakEnabled || !player) return false;
   const day = dayOf(new Date());
   const key = `fq-played-${player}-${day}`;
   try { if (localStorage.getItem(key)) return false; } catch {}
-  const res = await api('plays?on_conflict=player,day', {
-    method: 'POST',
-    headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
-    body: JSON.stringify({ player, day }),
-  });
-  if (!res.ok) throw new Error(`Supabase ${res.status}`);
   try { localStorage.setItem(key, '1'); } catch {}
+  const queue = readJSON(QUEUE_KEY, []);
+  if (!queue.some((q) => q.player === player && q.day === day)) queue.push({ player, day });
+  writeJSON(QUEUE_KEY, queue);
+  await flushPlays();
   return true;
 }
 
-// Ambil data 120 hari terakhir lalu hitung streak.
+// Kirim semua catatan main yang masih nunggu. Balikannya jumlah yang berhasil terkirim.
+export async function flushPlays() {
+  const queue = readJSON(QUEUE_KEY, []);
+  if (!streakEnabled || !queue.length) return 0;
+  const left = [];
+  let sent = 0;
+  for (let i = 0; i < queue.length; i++) {
+    const item = queue[i];
+    try {
+      const res = await api('plays?on_conflict=player,day', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+        body: JSON.stringify(item),
+      });
+      if (res.ok) sent++;
+      // Ditolak server (misal kelamaan offline, lebih dari sehari) → dibuang, jangan dicoba terus
+      else if (res.status >= 500) left.push(item);
+    } catch {
+      // Masih offline: simpan sisanya buat dicoba lagi nanti
+      left.push(...queue.slice(i));
+      break;
+    }
+  }
+  writeJSON(QUEUE_KEY, left);
+  return sent;
+}
+
+export const pendingPlays = () => readJSON(QUEUE_KEY, []).length;
+
+// Ambil data 120 hari terakhir lalu hitung streak. Kalau offline, pakai salinan terakhir.
 export async function loadStreak() {
   const today = dayOf(new Date());
-  const res = await api(`plays?select=player,day&day=gte.${shiftDay(today, -120)}&order=day.desc`);
-  if (!res.ok) throw new Error(`Supabase ${res.status}`);
-  const rows = await res.json();
+  let rows;
+  let offline = false;
+  try {
+    const res = await api(`plays?select=player,day&day=gte.${shiftDay(today, -120)}&order=day.desc`);
+    if (!res.ok) throw new Error(`Supabase ${res.status}`);
+    rows = await res.json();
+    writeJSON(ROWS_KEY, rows);
+  } catch (err) {
+    rows = readJSON(ROWS_KEY, null);
+    if (!rows) throw err; // belum pernah online sama sekali
+    offline = true;
+  }
+  // Main yang belum terkirim tetap dihitung di tampilan
+  rows = [...rows, ...readJSON(QUEUE_KEY, [])];
 
   const byDay = new Map();
   for (const { player, day } of rows) {
@@ -77,6 +128,7 @@ export async function loadStreak() {
   }
   return {
     count,
+    offline,
     litToday: both(today),
     today: { fall: !!byDay.get(today)?.has('fall'), aidan: !!byDay.get(today)?.has('aidan') },
     week,
