@@ -21,43 +21,55 @@ export function startPuzzle(stage, p, api) {
   const peekImg = wrap.querySelector('.puzzle-peek');
   const peekBtn = wrap.querySelector('.puzzle-peek-btn');
 
-  const tiles = [];
-  for (let k = 0; k < total; k++) {
+  // Kotak-kotak papan dibuat sekali & nggak pernah dipindah.
+  // Tukar kepingan = cukup tukar posisi gambar di dua kotak (jauh lebih enteng, bisa tap cepat).
+  const bgPos = (piece) => {
+    const r = Math.floor(piece / n), c = piece % n;
+    return `${(c / (n - 1)) * 100}% ${(r / (n - 1)) * 100}%`;
+  };
+  const slots = [];
+  for (let pos = 0; pos < total; pos++) {
     const t = document.createElement('button');
     t.className = 'tile';
-    const r = Math.floor(k / n), c = k % n;
     t.style.backgroundImage = `url("${p.image}")`;
     t.style.backgroundSize = `${n * 100}% ${n * 100}%`;
-    t.style.backgroundPosition = `${(c / (n - 1)) * 100}% ${(r / (n - 1)) * 100}%`;
-    t.dataset.piece = k;
-    tiles.push(t);
+    t.dataset.pos = pos;
+    slots.push(t);
+    board.appendChild(t);
   }
 
   let selected = -1, moves = 0, done = false, placedBefore = 0;
 
-  const caption = board.querySelector('.puzzle-caption');
-  function render() {
-    board.replaceChildren(caption, ...order.map((piece, pos) => {
-      const t = tiles[piece];
-      t.dataset.pos = pos;
-      t.classList.toggle('ok', piece === pos);
-      t.classList.toggle('sel', pos === selected);
-      return t;
-    }));
+  function paint(pos) {
+    const t = slots[pos];
+    t.style.backgroundPosition = bgPos(order[pos]);
+    t.classList.toggle('ok', order[pos] === pos);
+    t.classList.toggle('sel', pos === selected);
   }
 
-  board.addEventListener('click', (e) => {
+  function select(pos) {
+    const prev = selected;
+    selected = pos;
+    if (prev >= 0) paint(prev);
+    if (pos >= 0) paint(pos);
+  }
+
+  board.addEventListener('pointerdown', (e) => {
     const t = e.target.closest('.tile');
     if (!t || done) return;
+    e.preventDefault();
     const pos = +t.dataset.pos;
     if (selected === -1) {
-      selected = pos;
+      select(pos);
       api.sfx('flip');
     } else if (selected === pos) {
-      selected = -1;
+      select(-1);
     } else {
-      [order[selected], order[pos]] = [order[pos], order[selected]];
+      const a = selected;
+      [order[a], order[pos]] = [order[pos], order[a]];
       selected = -1;
+      paint(a);
+      paint(pos);
       moves++;
       const placed = order.filter((v, i) => v === i).length;
       if (placed > placedBefore) {
@@ -70,7 +82,6 @@ export function startPuzzle(stage, p, api) {
       placedBefore = placed;
       if (placed === total) win();
     }
-    render();
     stats();
   });
 
@@ -105,7 +116,7 @@ export function startPuzzle(stage, p, api) {
     api.finish({ win: ok, stars, detail: ok ? `Selesai dalam ${moves} tukaran` : 'Waktunya habis ⏰' });
   }
 
-  render();
+  slots.forEach((_, pos) => paint(pos));
   stats();
   return { destroy() { done = true; clearInterval(iv); } };
 }

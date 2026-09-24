@@ -1,6 +1,6 @@
 // Service worker: bikin game bisa dipasang ke home screen, bisa dimainin offline,
 // dan menampilkan notifikasi streak.
-const CACHE = 'love-quest-v2';
+const CACHE = 'love-quest-v3';
 const FONT_CACHE = 'love-quest-fonts';
 
 // Semua file game disimpan dari awal, biar bisa dibuka offline walaupun belum pernah dimainin.
@@ -52,20 +52,41 @@ self.addEventListener('fetch', (e) => {
   // Lagu (mp3) dilewatkan: browser mintanya sepotong-sepotong, nggak cocok disimpan di cache
   if (url.origin !== location.origin || url.pathname.startsWith('/audio/')) return;
 
-  // File game: ambil versi terbaru dari internet; kalau offline, pakai simpanan
-  e.respondWith(
+  const fromCache = () => caches.match(req, { ignoreSearch: true })
+    .then((hit) => hit || (req.mode === 'navigate' ? caches.match('/index.html') : null));
+  const saveCopy = (res) => {
+    if (res.ok && res.status === 200) {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(req, copy));
+    }
+    return res;
+  };
+
+  // Foto & ikon jarang berubah: langsung pakai simpanan di HP (cepat, nggak nunggu internet)
+  if (/\.(?:jpg|jpeg|png|webp|gif)$/i.test(url.pathname)) {
+    e.respondWith(fromCache().then((hit) => hit || fetch(req).then(saveCopy)).catch(() => Response.error()));
+    return;
+  }
+
+  // Kode game: coba versi terbaru dulu, tapi kalau internet lemot/putus maksimal nunggu 3 detik
+  e.respondWith(new Promise((resolve) => {
+    let settled = false;
+    const useCache = () => fromCache().then((hit) => {
+      if (hit && !settled) { settled = true; resolve(hit); }
+      return hit;
+    });
+    const timer = setTimeout(useCache, 3000);
     fetch(req)
       .then((res) => {
-        if (res.ok && res.status === 200) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-        }
-        return res;
+        clearTimeout(timer);
+        saveCopy(res);
+        if (!settled) { settled = true; resolve(res); }
       })
-      .catch(() => caches.match(req, { ignoreSearch: true })
-        .then((hit) => hit || (req.mode === 'navigate' ? caches.match('/index.html') : null))
-        .then((hit) => hit || Response.error())),
-  );
+      .catch(() => {
+        clearTimeout(timer);
+        useCache().then((hit) => { if (!settled) { settled = true; resolve(hit || Response.error()); } });
+      });
+  }));
 });
 
 self.addEventListener('push', (e) => {
