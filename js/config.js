@@ -17,13 +17,17 @@ export const CONFIG = {
     vapidPublicKey: 'BAMRmoqQbHJKhKLgt-F3dpV48v81e4dK8ajHAisMrWft9iTrqtA9MUd699q1WeipWTOrjvBBD0Ufowq2aoi-emw',
   },
 
-  // Pintu masuk rahasia: Fall harus masukin kode rahasia dulu (sekali aja per HP).
-  // `hash` = SHA-256 dari kodenya (bukan kode aslinya). Kosong = pintu nggak dipakai.
+  // Pintu masuk rahasia: masukin tanggal ulang tahun masing-masing (sekali aja per HP).
+  // Dari tanggalnya ketahuan siapa yang buka (Fall / Aidan), jadi nggak perlu milih lagi.
+  // Yang disimpan cuma hash SHA-256 dari "YYYY-MM-DD", bukan tanggalnya.
   gate: {
-    title: 'Khusus buat Fall 🤍',
-    question: 'Masukin kode rahasia kita dulu ya 🤫',
-    wrong: 'Hmm bukan itu 🤭 coba inget-inget lagi, Fall pasti tau',
-    hash: '0a233e37acb89dd2a076befecfa09e53d8961978044cc0392ca3712345d70390',
+    title: 'Masuk dulu yaa 🤍',
+    question: 'Masukin tanggal ulang tahun kamu 🎂',
+    wrong: 'Hmm, tanggalnya bukan itu 🤭 coba lagi yaa',
+    people: {
+      '77e1fbbbce7f7cf9c3890860d48a02ef5b5709299247df85ce0bb2b1f84d5707': 'fall',
+      'ef1fef826e0a5c68c65b6dd249116e1c927ad8c7ccb7e9522750df42e8a766b5': 'aidan',
+    },
   },
 
   // Pesan hari ini: muncul di halaman depan, ganti tiap hari (urut, balik lagi dari awal).

@@ -34,9 +34,12 @@
   /* Adegan chat (ingatan awal kenalan) */
   .chat { width: min(100%, 520px); margin: 0 auto; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 22px; padding: 18px; text-align: left; backdrop-filter: blur(6px); }
   .chat-head { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 14px; }
-  .chat-head i { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #6b8cff, #9b7bff); display: grid; place-items: center; font-style: normal; }
+  .chat-head i { flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #6b8cff, #9b7bff); display: grid; place-items: center; font-style: normal; }
   .chat-head b { font-weight: 500; font-size: 15px; } .chat-head small { display: block; color: var(--dim); font-size: 12px; }
-  .msgs { display: flex; flex-direction: column; gap: 8px; min-height: 190px; }
+  .msgs { display: flex; flex-direction: column; gap: 7px; min-height: 190px; max-height: min(62vh, 560px); overflow-y: auto; scrollbar-width: none; padding-right: 2px; }
+  .msgs::-webkit-scrollbar { display: none; }
+  .msg img { display: block; width: 210px; max-width: 100%; border-radius: 12px; margin: -4px -8px 8px; }
+  .msg.date { align-self: center; font-size: 12px; color: var(--dim); background: none; padding: 6px 0 2px; }
   .msg { max-width: 80%; padding: 10px 16px; border-radius: 16px; font-size: 16px; line-height: 1.4; opacity: 0; transform: translateY(6px); transition: all .5s ease; }
   .msg.in { opacity: 1; transform: none; }
   .msg.sys { align-self: center; background: rgba(255,255,255,.06); color: var(--soft); font-size: 13px; border-radius: 999px; }
@@ -81,27 +84,38 @@
 const SCENES = [
   { html: `<p class="start">buat fall.</p>` },
   { html: `<p class="line">waktu itu libur semester,<br>aku lagi <em>gabut-gabutnya</em>.</p>` },
+  { html: `<p class="line">iseng nyoba bot cari temen di telegram,</p><p class="small">niatnya cuma cari temen ngobrol.</p>` },
   { chat: true },
-  { html: `<p class="line">niatnya cuma iseng cari temen ngobrol.</p><p class="small">ternyata malah ketemu kamu.</p>` },
-  { html: `<p class="line">terus pelan-pelan, dari ngobrol biasa,<br>jadi <em>nyaman</em>. jadi <em>cocok</em>.</p>` },
+  { html: `<p class="line">dari tele, pindah ke ig.</p><p class="small">terus cerita-cerita, sampai call sampai malem. hari itu juga.</p>` },
+  { html: `<p class="line">terus pelan-pelan, dari ngobrol biasa,<br>akhirnya <em>nyaman</em> dan <em>cocok</em>.</p>` },
   { html: `<div class="polas"><div class="pola"><img src="/img/fall-kecil.jpg" alt=""><span>fall kecil</span></div><div class="pola"><img src="/img/aidan-kecil.jpg" alt=""><span>aidan kecil</span></div></div>
-           <p class="line" style="font-size:clamp(22px,2.6vw,32px)">dua orang yang dulu nggak saling tau apa-apa.</p>` },
+           <p class="line" style="font-size:clamp(22px,2.6vw,32px)"><em>two people who once didn't know each other at all.</em></p>` },
   { words: true, html: `<p class="line">hal-hal yang aku suka dari kamu:</p>
-      <div class="words reveal"><span>ketawamu</span><span>tingkah lakumu</span><span>kerandomanmu</span><span>ngambekmu</span><span>gemesnya kamu</span><span class="last">dan tentu aja, hatimu</span></div>` },
-  { html: `<p class="line">kita udah saling manggil sayang,<br>udah kayak pacaran.</p><p class="small">tapi ada satu hal yang belum pernah aku tanyain dengan bener.</p>` },
+      <div class="words reveal"><span>ketawamu</span><span>tingkah lakumu</span><span>kerandomanmu</span><span>ngambek dan gemesnya kamu</span><span class="last">dan tentu aja, your heart</span></div>` },
+  { html: `<p class="line">btw kita udah saling manggil sayang,<br>udah kayak pacaran.</p><p class="small">tapi ada satu hal yang belum pernah aku tanyain ke kamu.</p>` },
   { question: true },
 ];
-const TANYA = `fall, <em>do you want to be my girlfriend?</em>`;
+const TANYA = `falicya, <em>do you want to be my girlfriend?</em>`;
 const NO_LINES = ['beneran? 🥺', 'pikir lagi deh', 'hmm, yakin?'];
-const AFTER_YES = `<p class="line">makasih, fall. <em>🤍</em></p><p class="small">aku seneng banget. dan aku bakal jagain kamu, pelan-pelan, sebaik yang aku bisa.</p><p class="hand" style="margin-top:34px">— aidan</p>`;
-// Obrolan pertama di bot Telegram (dibuat mirip, bukan chat aslinya)
+const AFTER_YES = `<p class="line">makasih, <em>my baby honey cutey pie</em> 🤍</p><p class="small">aidan bakal berusaha buat jaga dan bikin fall happy tiap saat.</p><p class="hand" style="margin-top:30px">love youu</p>`;
+// Obrolan pertama kita (dari Leo, bot cari temen di Telegram)
 const CHAT = [
-  { t: 'sys', s: '🔍 mencari teman ngobrol…', w: 1400 },
-  { t: 'sys', s: '✨ teman ditemukan! sapa dia yuk', w: 1200 },
-  { t: 'me', s: 'haii', w: 1100 },
-  { t: 'you', s: 'hai jugaa', w: 1300 },
-  { t: 'me', s: 'lagi gabut juga ya?', w: 1200 },
-  { t: 'you', s: 'iya nih hehe', w: 900 },
+  { t: 'sys', s: '✨ kamu match sama lin', w: 1300 },
+  { t: 'date', s: '20 Agustus', w: 700 },
+  { t: 'me', img: 'beryy.jpg', s: 'haloo, kenalin aku zaidan dan ini ucing ak namanya beryy, salam kenal yaa', w: 2200 },
+  { t: 'me', s: 'btw km suka kucing nggak yaa? hahaha', w: 1500 },
+  { t: 'date', s: '21 Agustus', w: 700 },
+  { t: 'you', s: 'Hihii', w: 700 },
+  { t: 'you', s: 'Lucu bgt ya', w: 800 },
+  { t: 'you', s: 'Sukaa si', w: 800 },
+  { t: 'you', s: 'Sbb ya, soalnya jrng buka', w: 1300 },
+  { t: 'me', s: "it's okayy, aku juga buka tele kalo ada tugas dari tempat magang aja", w: 1500 },
+  { t: 'me', s: 'btw kamu lagi kulia kah atau uda kerjaa?', w: 1400 },
+  { t: 'you', s: 'Lagii kuliah sii', w: 900 },
+  { t: 'you', s: 'Mau move ig aja ga?', w: 1300 },
+  { t: 'me', s: 'boleee', w: 900 },
+  { t: 'you', s: 'Drop usn kaa', w: 1000 },
+  { t: 'me', s: 'iyaa, move ig aja kalo gitu hahaha', w: 1200 },
 ];
 // ============================================================
 
@@ -172,7 +186,7 @@ function next() {
   const s = SCENES[i];
   hint.classList.toggle('hide', Boolean(s.question || s.chat));
   if (s.chat) {
-    show(`<div class="chat"><div class="chat-head"><i>🤖</i><div><b>Bot Cari Teman</b><small>anonymous chat</small></div></div><div class="msgs"></div></div>`, playChat);
+    show(`<div class="chat"><div class="chat-head"><i>🤖</i><div><b>Leo – match and meet new friends</b><small>bot telegram</small></div></div><div class="msgs"></div></div>`, playChat);
     return;
   }
   if (s.question) {
@@ -193,9 +207,14 @@ function playChat(el) {
     setTimeout(() => {
       const d = document.createElement('div');
       d.className = `msg ${m.t}`;
-      d.textContent = m.s;
+      if (m.img) {
+        const im = document.createElement('img');
+        im.src = m.img; im.alt = '';
+        d.appendChild(im);
+      }
+      d.appendChild(document.createTextNode(m.s));
       box.appendChild(d);
-      requestAnimationFrame(() => d.classList.add('in'));
+      requestAnimationFrame(() => { d.classList.add('in'); box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' }); });
     }, t);
     t += m.w;
   });
@@ -204,11 +223,23 @@ function playChat(el) {
 
 function setupQuestion(el) {
   const yes = el.querySelector('#yes'), no = el.querySelector('#no');
-  let tries = 0;
+  let tries = 0, gone = false, last = 0;
   const dodge = (e) => {
-    if (tries >= NO_LINES.length) return; // setelah beberapa kali, biarin aja
-    e.preventDefault();
-    no.textContent = NO_LINES[tries++];
+    e?.preventDefault();
+    // satu klik = beberapa event sekaligus; hitung sekali aja per ~0,5 detik
+    if (gone || performance.now() - last < 500) return;
+    last = performance.now();
+    tries++;
+    if (tries > NO_LINES.length) {
+      // terakhir: mengecil lalu hilang
+      gone = true;
+      no.style.transition = 'transform .6s ease, opacity .6s ease';
+      no.style.transform = 'scale(0)';
+      no.style.opacity = '0';
+      setTimeout(() => no.remove(), 650);
+      return;
+    }
+    no.textContent = NO_LINES[tries - 1];
     const r = no.getBoundingClientRect();
     const y = yes.getBoundingClientRect();
     const q = el.querySelector('.q').getBoundingClientRect();
@@ -223,14 +254,11 @@ function setupQuestion(el) {
     no.classList.add('moved');
     no.style.left = `${x}px`;
     no.style.top = `${t}px`;
+    no.style.transform = `scale(${1 - tries * 0.2})`; // makin kecil tiap kabur
   };
   no.addEventListener('mouseenter', dodge);
   no.addEventListener('pointerdown', dodge);
-  no.addEventListener('click', () => {
-    if (tries < NO_LINES.length) return;
-    no.textContent = 'hehe, iya deh 🤍';
-    setTimeout(sayYes, 700);
-  });
+  no.addEventListener('click', (e) => { e.preventDefault(); dodge(e); }); // nggak pernah bisa dipencet
   yes.addEventListener('click', sayYes);
   busy = false;
 }
