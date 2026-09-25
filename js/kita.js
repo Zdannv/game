@@ -8,7 +8,7 @@ import { esc } from './util.js';
 
 const { url = '', anonKey = '' } = CONFIG.supabase || {};
 const KEY_STORE = 'fq-kita-key';
-const GATE_STORE = 'fq-gate-v2';
+const GATE_STORE = 'fq-gate-v3'; // v3: ultah sekaligus jadi kunci Kotak Kita
 const NAME = { fall: 'Fall', aidan: 'Aidan' };
 const other = (p) => (p === 'fall' ? 'aidan' : 'fall');
 
@@ -43,7 +43,9 @@ async function rpc(name, body) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(text.includes('kunci salah') ? 'kunci' : `Supabase ${res.status}`);
+    let msg = `Supabase ${res.status}`;
+    try { msg = JSON.parse(text).message || msg; } catch {}
+    throw new Error(text.includes('kunci salah') ? 'kunci' : msg);
   }
   return res.status === 204 ? null : res.json();
 }
@@ -56,7 +58,7 @@ async function sha256(text) {
 export function setupGate() {
   const gate = CONFIG.gate;
   let ok = false;
-  try { ok = localStorage.getItem(GATE_STORE) === '1' && Boolean(getPlayer()); } catch {}
+  try { ok = localStorage.getItem(GATE_STORE) === '1' && Boolean(getPlayer()) && Boolean(getKey()); } catch {}
   if (!gate?.people || ok) return Promise.resolve();
   return new Promise((resolve) => {
     const el = document.createElement('div');
@@ -75,9 +77,11 @@ export function setupGate() {
     document.body.appendChild(el);
     el.querySelector('form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const who = gate.people[await sha256(el.querySelector('input').value)];
+      const date = el.querySelector('input').value; // YYYY-MM-DD
+      const who = gate.people[await sha256(date)];
       if (who) {
         setPlayer(who); // dari ultahnya ketahuan siapa yang buka
+        try { localStorage.setItem(KEY_STORE, date); } catch {} // ultahnya sekaligus jadi kunci Kotak Kita
         try { localStorage.setItem(GATE_STORE, '1'); } catch {}
         sfx('win');
         el.classList.add('open');
@@ -103,17 +107,25 @@ export function dailyMessage() {
 }
 
 // ---------- Kecilin foto sebelum dikirim ----------
-function shrink(file, max = 1100, quality = 0.8) {
+function shrink(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const s = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * s);
-      c.height = Math.round(img.height * s);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(img.src);
-      resolve(c.toDataURL('image/jpeg', quality));
+      // mulai 1280px; kalau masih kegedean, kecilin & turunin kualitas sampai < ~1,5 MB teks
+      let max = 1280, q = 0.82, out = '';
+      for (let k = 0; k < 8; k++) {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        out = c.toDataURL('image/jpeg', q);
+        if (out.length < 1500000) break;
+        max = Math.round(max * 0.85);
+        q = Math.max(0.6, q - 0.05);
+      }
+      resolve(out);
     };
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
@@ -158,14 +170,27 @@ export async function openKita() {
   }
   panel.hidden = false;
   document.body.classList.add('kita-open');
-  if (!getPlayer()) { renderWho(); return; }
-  if (!kitaReady()) { renderNoKey(); return; }
+  if (!getPlayer() || !kitaReady()) {
+    // belum masuk lewat pintu ultah di HP ini → masuk dulu, lalu buka lagi
+    panel.hidden = true;
+    document.body.classList.remove('kita-open');
+    try { localStorage.removeItem(GATE_STORE); } catch {}
+    await setupGate();
+    openKita();
+    return;
+  }
   renderShell('<p class="kita-empty">Lagi ngambil kiriman… 💌</p>');
   try {
     items = await rpc('kita_list', {});
     render();
   } catch (err) {
-    renderShell(`<p class="kita-empty">${err.message === 'kunci' ? 'Kuncinya nggak cocok 🥺 buka lagi link yang dikirim Aidan ya.' : 'Nggak bisa nyambung, cek internet terus coba lagi yaa 📶'}</p>`);
+    if (err.message === 'kunci') {
+      // ultah yang kesimpen nggak dikenal database → masuk ulang
+      try { localStorage.removeItem(KEY_STORE); localStorage.removeItem(GATE_STORE); } catch {}
+      renderShell('<p class="kita-empty">Masuk lagi pakai tanggal ultah kamu yaa 🔐</p><div class="kita-who"><button class="btn" data-k="relogin">Masuk</button></div>');
+    } else {
+      renderShell(`<p class="kita-empty">Nggak bisa nyambung 📶<br><small>${esc(err.message)}</small></p><div class="kita-who"><button class="btn" data-k="retry">Coba lagi</button></div>`);
+    }
   }
 }
 function closeKita() {
@@ -299,6 +324,7 @@ async function markOpened(item) {
 async function onClick(e) {
   const t = e.target;
   if (t.closest('[data-k="close"]')) { closeKita(); return; }
+  if (t.closest('[data-k="retry"]') || t.closest('[data-k="relogin"]')) { openKita(); return; }
   const who = t.closest('[data-who]');
   if (who) { setPlayer(who.dataset.who); openKita(); return; }
   const tb = t.closest('[data-tab]');
@@ -395,8 +421,8 @@ async function onSubmit(e) {
     items = await rpc('kita_list', {});
     tab = kind === 'foto' ? 'foto' : 'surat';
     render();
-  } catch {
-    toast('Gagal ngirim, cek internet terus coba lagi 🥺');
+  } catch (err) {
+    toast(`Gagal ngirim 🥺 ${err.message === 'kunci' ? 'masuk ulang pakai ultah yaa' : err.message}`);
     btn.disabled = false;
     btn.textContent = 'Kirim 💖';
   }
