@@ -17,6 +17,49 @@ export const CONFIG = {
     vapidPublicKey: 'BAMRmoqQbHJKhKLgt-F3dpV48v81e4dK8ajHAisMrWft9iTrqtA9MUd699q1WeipWTOrjvBBD0Ufowq2aoi-emw',
   },
 
+  // Pintu masuk rahasia: Fall harus masukin kode rahasia dulu (sekali aja per HP).
+  // `hash` = SHA-256 dari kodenya (bukan kode aslinya). Kosong = pintu nggak dipakai.
+  gate: {
+    title: 'Khusus buat Fall 🤍',
+    question: 'Masukin kode rahasia kita dulu ya 🤫',
+    wrong: 'Hmm bukan itu 🤭 coba inget-inget lagi, Fall pasti tau',
+    hash: '0a233e37acb89dd2a076befecfa09e53d8961978044cc0392ca3712345d70390',
+  },
+
+  // Pesan hari ini: muncul di halaman depan, ganti tiap hari (urut, balik lagi dari awal).
+  daily: [
+    "pagi fall 🌤️ jangan lupa sarapan ya, aidan nggak mau kamu lemes",
+    "hari ini kamu cantik. kemarin juga. besok juga pasti. udah itu aja 😌",
+    "kalau hari ini capek, istirahat bentar ya. aidan bangga sama kamu kok",
+    "fun fact: aidan senyum-senyum sendiri tiap liat chat dari fall 🙈",
+    "semangat ya hari ini! kalau ada yang nyebelin, cerita ke aidan aja",
+    "minum air putih dulu gih 💧 ini perintah dari aidan hehe",
+    "aidan tuh beruntung banget bisa kenal kamu, serius",
+    "kalau lagi kangen, buka kotak kita aja. siapa tau ada surat baru 👀",
+    "senyum dong fall, dunia jadi lebih cerah kalau kamu senyum 🌼",
+    "aidan lagi mikirin kamu. iya, lagi. sekarang. hehe",
+    "jangan lupa, kamu nggak sendirian. ada aidan di sini 🤍",
+    "hari ini coba lakuin satu hal kecil yang bikin kamu seneng ya",
+    "kamu tuh alasan aidan semangat buka hp tiap pagi",
+    "fall yang lagi baca ini: iya kamu, aidan sayang kamu 💕",
+    "jangan begadang terus ya, aidan mau kamu sehat",
+    "kalau hari ini nggak sesuai rencana, nggak papa. besok kita coba lagi bareng",
+    "aidan masih inget cara kamu ketawa, dan itu masih bikin aidan seneng",
+    "hari ini makan yang enak ya, kirim fotonya ke kotak kita 🍜",
+    "kamu hebat, bahkan di hari-hari yang kamu ngerasa nggak hebat",
+    "reminder: fall itu lucu, pinter, dan cantik. no debat 😤",
+    "semoga hari ini banyak hal baik yang dateng ke kamu ✨",
+    "aidan pengen cepet-cepet ketemu kamu lagi 🥺",
+    "kalau lagi bete, inget ada yang selalu nungguin cerita kamu",
+    "jangan lupa bernapas pelan-pelan kalau lagi panik ya, kamu pasti bisa",
+    "makasih udah jadi fall. udah, gitu aja 🤍",
+    "hari ini tantangannya: senyum 3x. aidan pantau dari jauh 👀",
+    "kamu itu rumah, tempat aidan pengen pulang",
+    "kalau dunia lagi berisik, sini, dengerin aidan aja",
+    "aidan doain hari ini lancar semua ya fall 🙏",
+    "sampai ketemu di pesan besok ya. tetep jadi kamu yang aidan sayang 💖",
+  ],
+
   // Pesan untuk level utama (6 per dunia, urut dunia 1 → 5; nomor level ada di urutan peta)
   messages: [
     "Level pertama uda beres! Fall emang jago dari awal, kayak waktu Fall bikin aidan jatuh cinta 😳", // Dunia 1
