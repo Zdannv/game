@@ -634,3 +634,6 @@ body.kita-open { overflow: hidden; }
 .gate-wrong { color: #e0466b !important; margin: 12px 0 0 !important; font-weight: 600; }
 @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Muka waktu kecil (ganti owl & kucing) */
+.mascot-face { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 6px 16px rgba(214, 80, 140, .25); display: block; }

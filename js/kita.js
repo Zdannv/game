@@ -8,7 +8,7 @@ import { esc } from './util.js';
 
 const { url = '', anonKey = '' } = CONFIG.supabase || {};
 const KEY_STORE = 'fq-kita-key';
-const GATE_STORE = 'fq-gate-ok';
+const GATE_STORE = 'fq-gate-v2';
 const NAME = { fall: 'Fall', aidan: 'Aidan' };
 const other = (p) => (p === 'fall' ? 'aidan' : 'fall');
 
@@ -56,8 +56,8 @@ async function sha256(text) {
 export function setupGate() {
   const gate = CONFIG.gate;
   let ok = false;
-  try { ok = localStorage.getItem(GATE_STORE) === '1'; } catch {}
-  if (!gate?.hash || ok) return Promise.resolve();
+  try { ok = localStorage.getItem(GATE_STORE) === '1' && Boolean(getPlayer()); } catch {}
+  if (!gate?.people || ok) return Promise.resolve();
   return new Promise((resolve) => {
     const el = document.createElement('div');
     el.className = 'gate';
@@ -67,7 +67,7 @@ export function setupGate() {
         <h2>${esc(gate.title || 'Khusus buat kamu')}</h2>
         <p>${esc(gate.question)}</p>
         <form class="gate-form">
-          <input type="password" inputmode="numeric" autocomplete="off" required aria-label="Kode rahasia" placeholder="• • • • • • •">
+          <input type="date" required aria-label="Tanggal ulang tahun">
           <button class="btn" type="submit">Buka 💖</button>
         </form>
         <p class="gate-wrong" hidden>${esc(gate.wrong || 'Hmm, bukan itu 🤭 coba inget-inget lagi')}</p>
@@ -75,8 +75,9 @@ export function setupGate() {
     document.body.appendChild(el);
     el.querySelector('form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const v = el.querySelector('input').value.trim();
-      if ((await sha256(v)) === gate.hash) {
+      const who = gate.people[await sha256(el.querySelector('input').value)];
+      if (who) {
+        setPlayer(who); // dari ultahnya ketahuan siapa yang buka
         try { localStorage.setItem(GATE_STORE, '1'); } catch {}
         sfx('win');
         el.classList.add('open');

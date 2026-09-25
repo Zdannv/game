@@ -236,13 +236,21 @@ document.addEventListener('click', (e) => {
 
 // ---------- Home ----------
 document.querySelectorAll('.nm').forEach((el) => (el.textContent = CONFIG.name));
-document.title = `${CONFIG.name}'s Love Quest 💖`;
+document.title = `${CONFIG.name}'s Game 💖`;
 $('#btn-play').addEventListener('click', () => { sfx('click'); show('map'); });
 
 // ---------- Pintu rahasia, pesan hari ini, Kotak Kita ----------
-setupGate();
-const daily = dailyMessage();
-if (daily) { $('#daily-text').textContent = daily; $('#daily-card').hidden = false; }
+setupGate().then(() => { streakData = null; refreshStreak(); refreshKitaBadge(); renderDaily(); });
+// Pesan hari ini buat Fall; kalau yang buka Aidan, tampil sebagai "yang Fall liat hari ini"
+function renderDaily() {
+  const daily = dailyMessage();
+  const me = getPlayer();
+  if (!daily || !me) { $('#daily-card').hidden = true; return; }
+  $('#daily-label').textContent = me === 'aidan' ? '💌 Pesan yang Fall liat hari ini' : '💌 Pesan hari ini dari Aidan';
+  $('#daily-text').textContent = daily;
+  $('#daily-card').hidden = false;
+}
+renderDaily();
 $('#btn-kita').addEventListener('click', openKita);
 async function refreshKitaBadge() {
   const n = await unreadCount();
@@ -554,12 +562,7 @@ function streakMessage(me, d) {
 function streakCard() {
   const me = getPlayer();
   if (!me) {
-    return `<div class="streak-card">
-      <div class="who-pick">
-        <button class="btn ghost" data-who="fall">🦉 Fall</button>
-        <button class="btn ghost" data-who="aidan">🐱 Aidan</button>
-      </div>
-    </div>`;
+    return `<div class="streak-card"><p class="streak-msg">Masuk lewat pintu rahasia dulu yaa 🔐</p></div>`;
   }
   if (!streakData) {
     return `<div class="streak-card">
@@ -582,7 +585,6 @@ function streakCard() {
       ${d.week.map((w, i) => `<div class="wk ${w.fall && w.aidan ? 'both' : ''} ${i === 6 ? 'today' : ''}"><span>${dot(w)}</span><small>${i === 6 ? 'Hari ini' : dayName(w.day)}</small></div>`).join('')}
     </div>
     ${pushRow()}
-    <button class="link-btn" data-who-reset>bukan ${NAME[me]}? ganti</button>
   </div>`;
 }
 
