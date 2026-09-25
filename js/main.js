@@ -241,12 +241,12 @@ $('#btn-play').addEventListener('click', () => { sfx('click'); show('map'); });
 
 // ---------- Pintu rahasia, pesan hari ini, Kotak Kita ----------
 setupGate().then(() => { streakData = null; refreshStreak(); refreshKitaBadge(); renderDaily(); });
-// Pesan hari ini buat Fall; kalau yang buka Aidan, tampil sebagai "yang Fall liat hari ini"
+// Pesan hari ini: cuma tampil buat Fall
 function renderDaily() {
   const daily = dailyMessage();
   const me = getPlayer();
-  if (!daily || !me) { $('#daily-card').hidden = true; return; }
-  $('#daily-label').textContent = me === 'aidan' ? '💌 Pesan yang Fall liat hari ini' : '💌 Pesan hari ini dari Aidan';
+  if (!daily || me !== 'fall') { $('#daily-card').hidden = true; return; } // cuma buat Fall
+  $('#daily-label').textContent = '💌 Pesan hari ini dari Aidan';
   $('#daily-text').textContent = daily;
   $('#daily-card').hidden = false;
 }
