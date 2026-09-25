@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { sfx, toggleMute, isMuted, toggleMusic, isMusicOff } from './audio.js';
 import { confetti } from './confetti.js';
 import { esc, pick } from './util.js';
+import { setupGate, dailyMessage, openKita, unreadCount } from './kita.js';
 import { startMemory } from './games/memory.js';
 import { startCatch } from './games/catch.js';
 import { startPop } from './games/pop.js';
@@ -237,6 +238,20 @@ document.addEventListener('click', (e) => {
 document.querySelectorAll('.nm').forEach((el) => (el.textContent = CONFIG.name));
 document.title = `${CONFIG.name}'s Love Quest 💖`;
 $('#btn-play').addEventListener('click', () => { sfx('click'); show('map'); });
+
+// ---------- Pintu rahasia, pesan hari ini, Kotak Kita ----------
+setupGate();
+const daily = dailyMessage();
+if (daily) { $('#daily-text').textContent = daily; $('#daily-card').hidden = false; }
+$('#btn-kita').addEventListener('click', openKita);
+async function refreshKitaBadge() {
+  const n = await unreadCount();
+  $('#kita-badge').hidden = !n;
+  $('#kita-badge').textContent = n;
+}
+refreshKitaBadge();
+document.addEventListener('kita-closed', refreshKitaBadge);
+window.addEventListener('online', refreshKitaBadge);
 $('#btn-reset').addEventListener('click', () => {
   if (confirm('Yakin mau reset semua progress? Semua bintang bakal hilang 🥺')) {
     progress = { stars: {} };

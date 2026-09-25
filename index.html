@@ -7,12 +7,12 @@
   <meta name="description" content="Game kecil penuh cinta, khusus buat Falicya.">
   <meta name="theme-color" content="#ffd6e7">
   <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Love Quest">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>💖</text></svg>">
+  <link rel="icon" href="/icons/icon-192.png?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
@@ -27,8 +27,13 @@
       <div class="home-wrap">
         <div class="mascots" aria-hidden="true"><span>🦉</span><span>💖</span><span>🐱</span></div>
         <h1 class="title"><span class="nm">Falicya</span>'s<br><span class="title-2">Love Quest</span></h1>
+        <div class="daily-card" id="daily-card" hidden>
+          <small>💌 Pesan hari ini dari Aidan</small>
+          <p id="daily-text"></p>
+        </div>
         <div class="streak-slot" id="streak-home" hidden></div>
         <button class="btn big" id="btn-play">Main yuk! ▶</button>
+        <button class="btn ghost kita-btn" id="btn-kita">📮 Kotak Kita <span class="kita-badge" id="kita-badge" hidden></span></button>
         <button class="btn ghost install-btn" id="btn-install" hidden>📲 Pasang ke home screen</button>
         <button class="link-btn" id="btn-reset">reset progress</button>
       </div>

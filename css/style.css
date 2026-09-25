@@ -559,3 +559,78 @@ button:disabled { cursor: default; }
 /* Hemat tenaga HP saat main */
 body.playing #bg-hearts { display: none; }
 .guide-owl.happy { animation: owlBump .5s cubic-bezier(.3, 1.8, .5, 1), hop 1s .5s ease-in-out 2; }
+
+/* ---------- Pesan hari ini ---------- */
+.daily-card { width: 100%; background: #fff; border-radius: var(--radius); padding: 14px 18px; box-shadow: var(--shadow); text-align: left; border: 3px dashed var(--pink-soft); }
+.daily-card small { color: var(--pink-deep); font-weight: 700; font-size: 13px; }
+.daily-card p { margin: 6px 0 0; font-family: Caveat, cursive; font-size: 24px; line-height: 1.25; color: var(--ink); }
+
+/* ---------- Tombol Kotak Kita ---------- */
+.kita-btn { position: relative; }
+.kita-badge { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; background: #ff4d6d; color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+.kita-badge[hidden] { display: none; }
+
+/* ---------- Panel Kotak Kita ---------- */
+body.kita-open { overflow: hidden; }
+.kita { position: fixed; inset: 0; z-index: 50; background: linear-gradient(170deg, #fff4f9, #f3ecff); display: flex; flex-direction: column; animation: fadeIn .25s ease; }
+.kita[hidden] { display: none; }
+.kita-top { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; padding: 14px 16px 8px; text-align: center; }
+.kita-top b { display: block; font-size: 20px; color: var(--pink-deep); }
+.kita-top small { color: var(--ink-soft); font-size: 12px; }
+.kita-tabs { display: flex; gap: 8px; padding: 6px 16px 10px; }
+.kita-tabs button { flex: 1; border: 0; border-radius: 14px; padding: 10px 6px; font: inherit; font-weight: 600; background: #fff; color: var(--ink-soft); box-shadow: 0 3px 0 var(--pink-soft); }
+.kita-tabs button.on { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--pink-deep); }
+.kita-body { flex: 1; overflow-y: auto; padding: 4px 16px 32px; max-width: 560px; width: 100%; margin: 0 auto; }
+.kita-body h3 { margin: 16px 0 8px; font-size: 16px; color: var(--ink); }
+.kita-empty { text-align: center; color: var(--ink-soft); margin: 30px 10px; line-height: 1.5; }
+.kita-who { display: flex; gap: 10px; justify-content: center; }
+.envs { display: grid; gap: 10px; }
+.env { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; border-radius: 18px; padding: 12px 14px; font: inherit; color: var(--ink); background: #fff; box-shadow: var(--shadow); cursor: pointer; }
+.env:not(.opened) { background: linear-gradient(135deg, #fff, #ffeef6); border: 2px solid var(--pink-soft); }
+.env-icon { font-size: 34px; }
+.env:not(.opened) .env-icon { animation: hop 1.8s ease-in-out infinite; }
+.env-text { display: flex; flex-direction: column; }
+.env-text small { color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
+.sent { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.sent li { background: rgba(255,255,255,.7); border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; font-size: 14px; }
+.sent small { color: var(--ink-soft); font-size: 12px; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.ph { border: 0; background: none; padding: 0; font: inherit; color: var(--ink-soft); display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.ph-img { aspect-ratio: 1; border-radius: 14px; background: #fff center / cover no-repeat; display: grid; place-items: center; font-size: 26px; box-shadow: 0 4px 12px rgba(214,80,140,.15); }
+.ph.mine .ph-img { outline: 3px solid #e3dbff; }
+.ph small { font-size: 11px; }
+.kirim { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.kirim label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.kirim input:not([type=radio]):not([type=file]), .kirim select, .kirim textarea { font: inherit; font-size: 16px; color: var(--ink); padding: 10px 12px; border-radius: 14px; border: 2px solid var(--pink-soft); background: #fff; outline: none; width: 100%; -webkit-user-select: text; user-select: text; }
+.kirim textarea { resize: vertical; font-family: Caveat, cursive; font-size: 22px; line-height: 1.3; }
+.kirim .seg { display: flex; gap: 8px; }
+.kirim .seg label { flex: 1; flex-direction: row; align-items: center; justify-content: center; gap: 6px; background: #fff; border-radius: 14px; padding: 10px; border: 2px solid var(--pink-soft); color: var(--ink); cursor: pointer; }
+.kirim .seg label:has(input:checked) { border-color: var(--pink); background: #fff0f6; }
+.kirim .seg input { accent-color: var(--pink-deep); }
+.pick-photo { position: relative; align-items: center; justify-content: center; flex-direction: row !important; border: 2px dashed var(--lav); border-radius: 16px; padding: 18px; color: #7b5cd6 !important; font-size: 16px !important; cursor: pointer; background: #fff; }
+.pick-photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.photo-preview { width: 100%; max-height: 320px; object-fit: contain; border-radius: 16px; background: #fff; }
+.kita-viewer { position: fixed; inset: 0; z-index: 60; background: rgba(60, 20, 50, .55); display: grid; place-items: center; padding: 18px; animation: fadeIn .2s ease; }
+.kita-viewer-card { background: #fffaf5; border-radius: 24px; padding: 20px; width: min(100%, 480px); max-height: calc(100dvh - 36px); overflow-y: auto; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: pop .35s cubic-bezier(.3,1.5,.5,1); }
+.kita-letter { text-align: left; background: repeating-linear-gradient(#fffaf5 0 34px, #f3e3ea 34px 35px); border-radius: 14px; padding: 8px 6px 4px; }
+.kita-letter h3 { margin: 6px 0; font-family: Caveat, cursive; font-size: 30px; color: var(--pink-deep); }
+.kita-letter-body { font-family: Caveat, cursive; font-size: 24px; line-height: 35px; color: var(--ink); white-space: normal; }
+.kita-cat { margin: 0; font-weight: 700; color: #7b5cd6; font-size: 14px; }
+.kita-sign { text-align: right; font-family: Caveat, cursive; font-size: 24px; color: var(--pink-deep); margin: 10px 0 14px; }
+.kita-sign small { font-family: Fredoka, sans-serif; font-size: 12px; color: var(--ink-soft); }
+.kita-full { width: 100%; border-radius: 16px; }
+.kita-caption { font-family: Caveat, cursive; font-size: 24px; color: var(--ink); margin: 10px 0 0; }
+
+/* ---------- Pintu masuk rahasia ---------- */
+.gate { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: radial-gradient(circle at 30% 20%, #ffe0ee, transparent 60%), linear-gradient(160deg, #ffd6e7, #e6d9ff); transition: opacity .6s ease, transform .6s ease; }
+.gate.open { opacity: 0; transform: scale(1.08); }
+.gate-card { background: #fff; border-radius: 28px; padding: 28px 24px; width: min(100%, 380px); text-align: center; box-shadow: var(--shadow); }
+.gate-card.shake { animation: shake .4s; }
+.gate-lock { font-size: 56px; }
+.gate-card h2 { margin: 6px 0 4px; color: var(--pink-deep); }
+.gate-card p { color: var(--ink-soft); margin: 0 0 16px; }
+.gate-form { display: flex; flex-direction: column; gap: 12px; }
+.gate-form input { font: inherit; font-size: 18px; padding: 12px; border-radius: 14px; border: 2px solid var(--pink-soft); text-align: center; color: var(--ink); }
+.gate-wrong { color: #e0466b !important; margin: 12px 0 0 !important; font-weight: 600; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+@keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
