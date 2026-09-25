@@ -195,12 +195,16 @@ function renderWho() {
     <div class="kita-body"><p class="kita-empty">Kamu siapa nih? 😆</p>
       <div class="kita-who"><button class="btn" data-who="fall">🦉 Aku Fall</button><button class="btn" data-who="aidan">🐱 Aku Aidan</button></div></div>`;
 }
-function renderNoKey() {
+function renderNoKey(wrong = false) {
   panel.innerHTML = `
     <header class="kita-top"><button class="icon-btn" data-k="close">✖</button><div><b>📮 Kotak Kita</b></div><span></span></header>
-    <div class="kita-body"><p class="kita-empty">Kotak ini dikunci 🔐<br>Buka link khusus dari Aidan sekali aja, nanti HP ini langsung kebuka terus.</p></div>`;
+    <div class="kita-body"><p class="kita-empty">Kotak ini dikunci 🔐<br>Buka link khusus dari Aidan sekali aja, atau tempel kuncinya di sini.</p>
+      <form class="kirim" data-form="key">
+        <label>Kunci<input name="key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="tempel kuncinya di sini"></label>
+        ${wrong ? '<p class="gate-wrong">Kuncinya nggak cocok 🥺 coba cek lagi yaa</p>' : ''}
+        <button class="btn" type="submit">Buka kotak 💌</button>
+      </form></div>`;
 }
-
 function render() {
   const me = getPlayer();
   const them = other(me);
@@ -357,6 +361,19 @@ async function onChange(e) {
 async function onSubmit(e) {
   e.preventDefault();
   const form = e.target;
+  if (form.dataset.form === 'key') {
+    const k = form.key.value.trim();
+    if (!k) return;
+    try { localStorage.setItem(KEY_STORE, k); } catch {}
+    try {
+      await rpc('kita_list', {}); // cek kuncinya bener
+      openKita();
+    } catch {
+      try { localStorage.removeItem(KEY_STORE); } catch {}
+      renderNoKey(true);
+    }
+    return;
+  }
   const me = getPlayer();
   const kind = form.kind.value;
   const body = kind === 'surat' ? form.body.value.trim() : form.caption.value.trim();
