@@ -5,6 +5,20 @@
 
 export const CONFIG = {
   name: 'Falicya',
+  // Minggu ujian Fall: halaman /semangat/ + banner di beranda + tema dokter selama periode ini
+  exam: {
+    from: '2026-09-28', // hari pertama ujian (YYYY-MM-DD, WIB)
+    days: 7,            // lama periode ujian
+    daily: [
+      'Hari pertama ujian! Bu dokter sayangnya Aidan pasti bisa. Kamu udah belajar sejauh ini, sekarang tinggal percaya sama diri sendiri yaa 🩺💗',
+      'Kalau kemarin ada yang kurang, nggak apa-apa. Hari ini hari baru, fokus ke yang ada di depan aja. Aidan dukung dari sini 🤍',
+      'Udah jalan terus nih! Jangan lupa makan sama minum ya dok, otak pinter juga butuh bensin 🍱',
+      'Fall yang lagi capek tetep keren. Istirahat bentar boleh kok, abis itu lanjut lagi. Semangat bu dokter! 💪',
+      'Satu langkah lagi makin deket jadi dokter beneran. Aidan bangga banget sama kamu, serius 🥹',
+      'Hampir selesai! Tarik napas, pelan-pelan, kamu pasti bisa ngerjainnya 🩺',
+      'Minggu ujian selesai! Makasih udah berjuang sekeras ini. Sekarang waktunya istirahat, bu dokter 💗',
+    ],
+  },
   from: 'Aidan', // ← ganti dengan nama / panggilan kamu
 
   // Streak couple (Supabase). Isi dari Supabase → Project Settings → API.

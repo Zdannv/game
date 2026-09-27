@@ -85,6 +85,32 @@ const WORLDS = [
 ];
 const EXTRA_SLOTS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
+// ---------- Minggu ujian Fall: semua tema jadi dokter ----------
+function examActive() {
+  const ex = CONFIG.exam;
+  if (!ex?.from) return false;
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  const d = Math.round((new Date(`${today}T12:00:00Z`) - new Date(`${ex.from}T12:00:00Z`)) / 864e5);
+  return d >= -1 && d <= ex.days; // mulai sehari sebelum, sampai sehari setelah selesai
+}
+const EXAM = examActive();
+if (EXAM) {
+  document.body.classList.add('exam');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#e3f6f1');
+  const DOC_WORLDS = [
+    { name: 'Klinik Bunga', icon: '🩺' },
+    { name: 'Apotek Permen', icon: '💊' },
+    { name: 'Puskesmas Pantai', icon: '🏥' },
+    { name: 'Jaga Malam', icon: '🌙' },
+    { name: 'Praktik di Rumah', icon: '🏡' },
+  ];
+  WORLDS.forEach((w, i) => Object.assign(w, DOC_WORLDS[i]));
+  WORLDS[0].memory = ['🩺', '💊', '🩹', '💉', '🌡️', '🧪', '🔬', '🦷', '🫀', '🧠', '🩻', '🏥'];
+  WORLDS[0].catchGood = ['💊', '🩹', '💖'];
+  WORLDS[1].memory = ['💊', '🍬', '🧁', '🍩', '🩹', '🍪', '🍫', '🌡️', '🍡', '🍮', '💉', '🍒'];
+  WORLDS[1].catchGood = ['💊', '🍬', '🧁'];
+}
+
 const PATTERN = ['memory', 'catch', 'pop', 'memory', 'catch', 'quiz'];
 const TYPE_NAME = {
   memory: 'Kartu Kembar', catch: 'Tangkap Cinta', pop: 'Tap si Imut', quiz: 'Kuis Sayang',
@@ -236,7 +262,8 @@ document.addEventListener('click', (e) => {
 
 // ---------- Home ----------
 document.querySelectorAll('.nm').forEach((el) => (el.textContent = CONFIG.name));
-document.title = `${CONFIG.name}'s Game 💖`;
+document.title = EXAM ? `dr. ${CONFIG.name}'s Game 🩺` : `${CONFIG.name}'s Game 💖`;
+if (EXAM) { $('.title .nm').textContent = `dr. ${CONFIG.name}`; $('.mascot-mid').textContent = '🩺'; }
 $('#btn-play').addEventListener('click', () => { sfx('click'); show('map'); });
 
 // ---------- Pintu rahasia, pesan hari ini, Kotak Kita ----------
@@ -335,9 +362,15 @@ const bubbleEl = $('#hud-hint');
 let hintText = '';
 let sayTimer = 0;
 
-const OWL_START = ['Hoot! Semangat Fall! 💪', 'Hoot hoot! Fall pasti bisa!', 'Owl dukung dari sini yaa 🦉', 'Siap-siap Fall! Hoot!'];
-const OWL_WIN = ['Hoot hoot! Fall hebat bangett! 🥳', 'Owl bangga sama Fall! 🦉💖', 'Hoot! Keren parah sih ini!'];
-const OWL_LOSE = ['Hoot… nggak papa, coba lagi yuk 🥺', 'Owl yakin next pasti bisa! 💪', 'Hoot… hampir banget tadi!'];
+const OWL_START = EXAM
+  ? ['Hoot! Semangat bu dokter! 💪', 'Hoot hoot! dr. Fall pasti bisa!', 'Owl jadi asisten dokter hari ini 🦉🩺', 'Siap-siap dok! Hoot!']
+  : ['Hoot! Semangat Fall! 💪', 'Hoot hoot! Fall pasti bisa!', 'Owl dukung dari sini yaa 🦉', 'Siap-siap Fall! Hoot!'];
+const OWL_WIN = EXAM
+  ? ['Hoot hoot! dr. Fall hebat bangett! 🥳', 'Owl bangga sama bu dokter! 🦉💖', 'Hoot! Operasinya sukses, dok!']
+  : ['Hoot hoot! Fall hebat bangett! 🥳', 'Owl bangga sama Fall! 🦉💖', 'Hoot! Keren parah sih ini!'];
+const OWL_LOSE = EXAM
+  ? ['Hoot… nggak papa dok, coba lagi yuk 🥺', 'Owl yakin next pasti bisa! 💪', 'Hoot… hampir banget tadi, dok!']
+  : ['Hoot… nggak papa, coba lagi yuk 🥺', 'Owl yakin next pasti bisa! 💪', 'Hoot… hampir banget tadi!'];
 
 function owlSay(text, mood = 'happy', ms = 2400) {
   clearTimeout(sayTimer);
@@ -715,9 +748,11 @@ window.addEventListener('appinstalled', () => { installBtn.hidden = true; });
 
 refreshStreak();
 
+$('#exam-card').hidden = !EXAM;
+
 // ---------- Hati melayang di background ----------
 const bg = $('#bg-hearts');
-const BG_EMOJI = ['💗', '💕', '🌸', '✨', '💖', '🤍'];
+const BG_EMOJI = EXAM ? ['🩺', '💗', '💊', '🩹', '🤍', '✨'] : ['💗', '💕', '🌸', '✨', '💖', '🤍'];
 for (let i = 0; i < 16; i++) {
   const s = document.createElement('span');
   s.textContent = BG_EMOJI[i % BG_EMOJI.length];
