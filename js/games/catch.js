@@ -225,7 +225,7 @@ export function startCatch(stage, p, api) {
     done = true;
     const detail = win ? `Skor ${score} 💖`
       : why === 'lives' ? 'Kena 💔 terlalu banyak' : `Skor ${score}, butuh ${p.target}`;
-    api.finish({ win, stars: win ? Math.max(1, starsFor(score, p.target)) : 0, detail });
+    api.finish({ win, score, stars: win ? Math.max(1, starsFor(score, p.target)) : 0, detail });
   }
 
   return {
