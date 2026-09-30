@@ -142,7 +142,7 @@ export function startStack(stage, p, api) {
     if (done) return;
     done = true;
     const stars = !win ? 0 : Math.max(1, Math.min(3, lives + (perfects >= 3 ? 1 : 0) - (p.lives - 3)));
-    api.finish({ win, stars, detail: win ? `Kue ${p.target} tingkat jadi! (${perfects} perfect)` : `Kuenya jadi ${placed()} tingkat` });
+    api.finish({ win, stars, score: placed(), detail: win ? `Kue ${p.target} tingkat jadi! (${perfects} perfect)` : `Kuenya jadi ${placed()} tingkat` });
   }
 
   reset();
