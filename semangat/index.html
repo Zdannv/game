@@ -265,11 +265,23 @@ const LINES = [
   'Fall pintar, Fall hebat, Fall pasti bisa!',
   'Aidan bangga sama Fall, apa pun hasilnya.',
 ];
+// Pas lagi haid: kalimatnya ditambah yang nyambung sama itu
+const REST_LINES = [
+  'Perutnya sakit ya? Kompres anget dulu, soalnya bisa nunggu sebentar kok.',
+  'Lagi haid tapi tetep ujian. Bu dokter emang paling kuat.',
+  'Kalau mood-nya naik turun, nggak apa-apa. Aidan tetep di sini.',
+  'Jangan lupa minum air anget sama makan yang bener ya sayang.',
+  'Boleh kok istirahat dulu kalau badannya lagi nggak enak. Kamu nggak harus kuat terus.',
+  'Resep dr. hun hun hari ini: air anget, cemilan manis, sama istirahat yang cukup.',
+];
+const rest = exam.rest;
+const restDay = rest ? Math.round((new Date(`${today}T12:00:00Z`) - new Date(`${rest.from}T12:00:00Z`)) / 864e5) : -1;
+const POOL = restDay >= 0 && restDay < rest.days ? [...LINES, ...REST_LINES] : LINES;
 let last = -1;
 function cheer() {
-  let i; do { i = Math.floor(Math.random() * LINES.length); } while (i === last && LINES.length > 1);
+  let i; do { i = Math.floor(Math.random() * POOL.length); } while (i === last && POOL.length > 1);
   last = i;
-  $('#pop-text').textContent = LINES[i];
+  $('#pop-text').textContent = POOL[i];
   $('#pop').classList.add('show');
   navigator.vibrate?.(30);
 }
