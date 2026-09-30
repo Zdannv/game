@@ -8,11 +8,12 @@ export const CONFIG = {
   // Minggu ujian Fall: halaman /semangat/ + banner di beranda + tema dokter selama periode ini
   exam: {
     from: '2026-09-28', // hari pertama ujian (YYYY-MM-DD, WIB)
+    rest: { from: '2026-09-29', days: 5 }, // hari-hari tombol darurat ikut ngasih kalimat 'lagi haid'
     days: 7,            // lama periode ujian
     daily: [
       'Hari pertama ujian! Bu dokter sayangnya Aidan pasti bisa. Kamu udah belajar sejauh ini, sekarang tinggal percaya sama diri sendiri yaa 🩺💗',
       'Kalau kemarin ada yang kurang, nggak apa-apa. Hari ini hari baru, fokus ke yang ada di depan aja. Aidan dukung dari sini 🤍',
-      'Udah jalan terus nih! Jangan lupa makan sama minum ya dok, otak pinter juga butuh bensin 🍱',
+      'Ujian sambil lagi haid itu dobel perjuangan, dan kamu tetep jalanin. Hebat banget sih bu dokter. Minum air anget, makan yang bener, kalau perutnya sakit istirahat dulu ya sayang. dr. hun hun bangga sama kamu 🤍',
       'Fall yang lagi capek tetep keren. Istirahat bentar boleh kok, abis itu lanjut lagi. Semangat bu dokter! 💪',
       'Satu langkah lagi makin deket jadi dokter beneran. Aidan bangga banget sama kamu, serius 🥹',
       'Hampir selesai! Tarik napas, pelan-pelan, kamu pasti bisa ngerjainnya 🩺',
