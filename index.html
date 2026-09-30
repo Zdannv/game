@@ -38,9 +38,47 @@
         </a>
         <div class="streak-slot" id="streak-home" hidden></div>
         <button class="btn big" id="btn-play">Main yuk! ▶</button>
+        <button class="btn ghost talk-btn" id="btn-talk">💬 Kartu Deep Talk</button>
         <button class="btn ghost kita-btn" id="btn-kita">📮 Kotak Kita <span class="kita-badge" id="kita-badge" hidden></span></button>
         <button class="btn ghost install-btn" id="btn-install" hidden>📲 Pasang ke home screen</button>
         <button class="link-btn" id="btn-reset">reset progress</button>
+      </div>
+    </section>
+
+    <!-- KARTU DEEP TALK -->
+    <section id="screen-talk" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" data-go="home" aria-label="Beranda">🏠</button>
+        <div class="star-total" id="talk-count">💬</div>
+        <span class="topbar-gap" aria-hidden="true"></span>
+      </header>
+      <div class="talk-wrap">
+        <h2 class="talk-title">Kartu Deep Talk</h2>
+        <p class="talk-sub">Tarik satu kartu, jawab gantian, dengerin baik-baik 🤍</p>
+        <div class="talk-cats" id="talk-cats"></div>
+        <button class="talk-card" id="talk-card" type="button" aria-live="polite">
+          <span class="talk-inner">
+            <span class="talk-back"><span class="talk-logo">💬</span><b>Tap buat tarik kartu</b></span>
+            <span class="talk-front"><small id="talk-cat"></small><p id="talk-q"></p></span>
+          </span>
+        </button>
+        <button class="btn" id="talk-next" type="button">Tarik kartu 🃏</button>
+      </div>
+    </section>
+
+    <!-- MAIN BARENG (ONLINE) -->
+    <section id="screen-online" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" data-go="home" aria-label="Beranda">🏠</button>
+        <div class="star-total">💞 Berdua</div>
+        <span class="topbar-gap" aria-hidden="true"></span>
+      </header>
+      <div class="talk-wrap">
+        <h2 class="talk-title">Main Berdua</h2>
+        <p class="talk-sub">Main barengan dari HP masing-masing, langsung nyambung 💞</p>
+        <div class="ol-card" id="ol-room"></div>
+        <div class="ol-map" id="ol-map"></div>
+        <div class="ol-games" id="ol-games"></div>
       </div>
     </section>
 
