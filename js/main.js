@@ -192,6 +192,7 @@ const MAIN = LEVELS.filter((L) => !L.bonus);
 
 function hintFor(L) {
   const p = L.params;
+  if (L.endless) return `Main terus sampai nyawa habis, makin lama makin susah! Rekor kamu: ${p.best || 0} ${SCORE_UNIT[L.type]} 🏆`;
   switch (L.type) {
     case 'memory': return `Cari ${p.pairs} pasang kartu kembar dalam ${p.time} detik!`;
     case 'catch': return `Geser 🐱 buat nangkep ${p.good.join('')}, hindari ${p.bad.join('')}! Target ${p.target}. Ada Aidan Jr jatuh? Tangkep! +10`;
@@ -211,7 +212,7 @@ function hintFor(L) {
 const levelLabel = (L) => (L.bonus ? 'Bonus ⭐' : `Level ${L.num}`);
 
 // ---------- Main Sendiri: Pilih game (tiap jenis game punya level sendiri, makin susah) ----------
-const SOLO_TYPES = ['fly', 'memory', 'catch', 'pop', 'puzzle', 'odd', 'simon', 'stack', 'runner', 'throw', 'maze', 'timing', 'quiz'];
+const SOLO_TYPES = ['fly', 'runner', 'stack', 'catch', 'timing', 'simon', 'memory', 'pop', 'puzzle', 'odd', 'throw', 'maze', 'quiz'];
 const trackLen = (t) => (t === 'quiz' ? Math.min(5, CONFIG.quiz.length) : 10);
 const worldParams = (wi, type) => [wi, wi - 1, wi + 1, wi - 2, 0].map((x) => LEVELS.find((L) => L.world === x && L.type === type && !L.bonus)?.params).find(Boolean);
 // k = level 0..9 → setelan game (dipakai juga buat Main Berdua yang skornya dijumlah)
@@ -240,6 +241,24 @@ function trackParams(type, k) {
 function soloTrack(type, k) {
   if (!SOLO_TYPES.includes(type) || k < 0 || k >= trackLen(type)) return null;
   return { id: `s-${type}-${k}`, track: type, k, num: k + 1, type, world: Math.min(4, Math.floor(k / 2)), params: trackParams(type, k) };
+}
+// Mode skor: game yang bisa dimainin terus → nggak ada level, main sampai nyawa habis, simpan rekor
+const ENDLESS = ['fly', 'runner', 'stack', 'catch', 'timing', 'simon'];
+const BEST_KEY = 'fq-best';
+const bestScores = () => { try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}'); } catch { return {}; } };
+function saveBest(type, score) {
+  const all = bestScores();
+  if (score <= (all[type] || 0)) return false;
+  all[type] = score;
+  try { localStorage.setItem(BEST_KEY, JSON.stringify(all)); } catch {}
+  return true;
+}
+const SCORE_UNIT = { fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan' };
+function endlessLevel(type) {
+  const base = trackParams(type, 1);
+  const inf = Number.POSITIVE_INFINITY;
+  const params = { ...base, endless: true, best: bestScores()[type] || 0, ...(type === 'runner' || type === 'catch' ? { time: inf } : { target: inf }) };
+  return { id: `e-${type}`, track: type, endless: true, num: 0, k: 0, type, world: 0, params };
 }
 const trackOpen = (L) => TEST_MODE || L.k === 0 || (progress.stars[`s-${L.track}-${L.k - 1}`] || 0) > 0;
 
@@ -439,7 +458,14 @@ function renderTracks() {
     return;
   }
   let all = 0;
-  worldsEl.innerHTML = `<p class="ol-section">Pilih satu game, levelnya makin susah</p><div class="track-list">` + SOLO_TYPES.map((t) => {
+  const card = (t) => {
+    if (ENDLESS.includes(t)) {
+      return `<button type="button" class="ol-game" data-endless="${t}">
+        <span class="ol-game-icon">${TYPE_ICON[t]}</span>
+        <span><b>${TYPE_NAME[t]}</b><small>Mode skor · main terus sampai nyawa habis</small></span>
+        <span class="track-prog">🏆 ${bestScores()[t] || 0}<small>rekor</small></span>
+      </button>`;
+    }
     const n = trackLen(t);
     const got = [...Array(n)].reduce((a, _, k) => a + st(`s-${t}-${k}`), 0);
     const done = [...Array(n)].filter((_, k) => st(`s-${t}-${k}`)).length;
@@ -449,7 +475,9 @@ function renderTracks() {
       <span><b>${TYPE_NAME[t]}</b><small>${n} level</small></span>
       <span class="track-prog">${done}/${n}<small>⭐ ${got}</small></span>
     </button>`;
-  }).join('') + '</div>';
+  };
+  worldsEl.innerHTML = `<p class="ol-section">🏆 Mode skor: main terus, kejar rekor</p><div class="track-list">${SOLO_TYPES.filter((t) => ENDLESS.includes(t)).map(card).join('')}</div>`
+    + `<p class="ol-section" style="margin-top:18px">⭐ Pakai level: makin tinggi makin susah</p><div class="track-list">${SOLO_TYPES.filter((t) => !ENDLESS.includes(t)).map(card).join('')}</div>`;
   $('#star-count').textContent = `${all}`;
 }
 $('#solo-tabs').addEventListener('click', (e) => {
@@ -462,6 +490,8 @@ $('#solo-tabs').addEventListener('click', (e) => {
 });
 
 worldsEl.addEventListener('click', (e) => {
+  const en = e.target.closest('[data-endless]');
+  if (en) { sfx('click'); startLevel(endlessLevel(en.dataset.endless)); return; }
   const tr = e.target.closest('[data-solo-track]');
   if (tr) { sfx('click'); soloTrackType = tr.dataset.soloTrack; renderMap(); window.scrollTo(0, 0); return; }
   const tl = e.target.closest('[data-track-lvl]');
@@ -521,7 +551,7 @@ function startLevel(i) {
   show('game');
   screens.game.dataset.theme = WORLDS[L.world].theme;
   stageEl.innerHTML = '';
-  $('#hud-title').textContent = L.track ? `${TYPE_NAME[L.type]} · Level ${L.num}` : `${levelLabel(L)} · ${TYPE_NAME[L.type]}`;
+  $('#hud-title').textContent = L.endless ? `${TYPE_NAME[L.type]} · Mode skor 🏆` : L.track ? `${TYPE_NAME[L.type]} · Level ${L.num}` : `${levelLabel(L)} · ${TYPE_NAME[L.type]}`;
   hintText = hintFor(L);
   $('#hud-stats').textContent = '';
 
@@ -710,6 +740,7 @@ const LOSE_LINES = [
 function onFinish(token, r) {
   if (current?.token !== token) return;
   const L = current.L;
+  if (L.endless) return endlessFinish(token, L, r);
   recordPlay()
     .then((isNew) => { if (isNew) { refreshStreak(true); if (!pendingPlays()) notifyPlayed(); } })
     .catch(() => {});
@@ -727,6 +758,30 @@ function onFinish(token, r) {
     if (current?.token !== token) return;
     stopGame();
     showResult(L, r);
+  }, 700);
+}
+
+function endlessFinish(token, L, r) {
+  recordPlay().then((isNew) => { if (isNew) { refreshStreak(true); if (!pendingPlays()) notifyPlayed(); } }).catch(() => {});
+  const old = bestScores()[L.type] || 0;
+  const record = saveBest(L.type, r.score || 0);
+  if (record) { sfx('win'); confetti(); owlSay('Hoot!! Rekor baru! 🏆', 'happy', 0); } else { sfx('lose'); owlSay(pick(OWL_LOSE), 'sad', 0); }
+  setTimeout(() => {
+    if (current?.token !== token) return;
+    stopGame();
+    resultL = L;
+    const unit = SCORE_UNIT[L.type];
+    modal.querySelector('.modal-card').innerHTML = `
+      <div class="owl-react ${record ? 'happy' : 'sad'}"><span class="owl">🦉</span><span class="owl-extra">${record ? '🏆' : '💪'}</span></div>
+      <p class="detail">${TYPE_NAME[L.type]} · Mode skor</p>
+      <div class="score-big">${r.score || 0}<small>${unit}</small></div>
+      <h2>${record ? 'Rekor baru! 🎉' : `Rekor kamu ${old} ${unit}`}</h2>
+      <p class="detail">${esc(r.detail || '')}${record && old ? ` · rekor lama ${old}` : ''}</p>
+      <div class="modal-actions">
+        <button class="btn ghost" data-go="map">🎯 Pilih game</button>
+        <button class="btn" data-act="retry">Main lagi 🔁</button>
+      </div>`;
+    modal.classList.remove('hidden');
   }, 700);
 }
 
@@ -796,6 +851,7 @@ modal.addEventListener('click', (e) => {
   sfx('click');
   const i = +modal.dataset.level;
   closeModal();
+  if (resultL?.endless && act === 'retry') { startLevel(endlessLevel(resultL.type)); return; }
   if (resultL?.track && (act === 'retry' || act === 'next')) {
     const L = act === 'retry' ? resultL : soloTrack(resultL.track, resultL.k + 1);
     if (L) startLevel(L); else show('map');

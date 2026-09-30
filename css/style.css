@@ -807,3 +807,7 @@ body.exam #screen-game[data-theme="w-flower"] { background: linear-gradient(180d
 .track-prog small { display: block; font-size: 12px; color: var(--ink-soft); font-weight: 600; }
 .ol-back { display: block; margin: 0 0 8px; text-align: left; }
 .track-card { text-align: left; }
+
+/* Hasil mode skor */
+.score-big { font-size: 64px; font-weight: 700; color: var(--pink-deep); line-height: 1; margin: 6px 0 2px; }
+.score-big small { display: block; font-size: 16px; color: var(--ink-soft); font-weight: 600; margin-top: 4px; }
