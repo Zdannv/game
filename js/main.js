@@ -4,6 +4,7 @@ import { confetti } from './confetti.js';
 import { esc, pick } from './util.js';
 import { setupGate, dailyMessage, openKita, unreadCount } from './kita.js';
 import { initTalk } from './talk.js';
+import { initDraw } from './draw.js';
 import { mountOnline, enterLobby, refreshLobby, inviteGame, on as onNet, send as sendNet, me as meNet, peer as peerNet, playerLook } from './online.js';
 import { ONLINE_GAMES, LEVEL_GAMES } from './online-games.js';
 import { DUO_NAMES, recordDuo, duoUnlocked, getDuoLevel, nextDuoLevel, duoLabel } from './duo-levels.js';
@@ -298,8 +299,10 @@ const letterOpen = () => true; // surat sekarang selalu bisa dibuka
 
 // ---------- Layar ----------
 const $ = (s) => document.querySelector(s);
-const screens = { home: $('#screen-home'), map: $('#screen-map'), game: $('#screen-game'), letter: $('#screen-letter'), talk: $('#screen-talk'), online: $('#screen-online') };
+const screens = { home: $('#screen-home'), map: $('#screen-map'), game: $('#screen-game'), letter: $('#screen-letter'), talk: $('#screen-talk'), online: $('#screen-online'), draw: $('#screen-draw') };
 const talk = initTalk({ sfx }); // Kartu Deep Talk
+let drawOpen = false;
+const draw = initDraw({ sfx, toast: (t) => toast(t), onClose: () => { drawOpen = false; } }); // Gambar Udara
 const stageEl = $('#stage');
 const modal = $('#modal');
 
@@ -312,6 +315,7 @@ function show(name) {
   if (name === 'talk') talk.reset();
   else talk.setSync(false);
   if (name === 'online') enterLobby();
+  if (name !== 'draw' && drawOpen) draw.close();
   window.scrollTo(0, 0);
 }
 
@@ -637,6 +641,7 @@ mountOnline({
   startGame: (game, seed, extra) => startOnline(game, seed, null, extra),
   startLevel: (id, seed, extra) => startOnline('level', seed, id, extra),
   openTalk: () => { show('talk'); talk.setSync(true); },
+  openDraw: () => { show('draw'); drawOpen = true; draw.open(true); },
 });
 
 function onlineParams(game, L) {
