@@ -652,5 +652,6 @@ export const ONLINE_GAMES = {
   tebak: { name: 'Tebak Pasangan', icon: '💞', desc: 'Seberapa kenal kamu sama dia?', start: startTebak },
   puzzle: { name: 'Puzzle Bareng', icon: '🧩', desc: 'Susun foto kalian berdua-duaan', start: startPuzzleTogether },
   memory: { name: 'Kartu Kembar Gantian', icon: '🃏', desc: 'Gantian buka kartu, kumpulin pasangan terbanyak', start: startMemoryTurns, countdown: true },
+  draw: { name: 'Gambar Udara', icon: '✍️', desc: 'Gambar pakai jari di depan kamera, muncul live di HP pasangan' },
   talk: { name: 'Deep Talk Bareng', icon: '💬', desc: 'Kartu yang ditarik muncul di HP kalian berdua' },
 };
