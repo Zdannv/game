@@ -818,6 +818,10 @@ body.exam #screen-game[data-theme="w-flower"] { background: linear-gradient(180d
 .draw-stage { position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: 26px; overflow: hidden; background: linear-gradient(160deg, #fff4f9, #f1ebff); box-shadow: var(--shadow); border: 4px solid #fff; }
 .draw-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 #screen-draw.cam-off .draw-stage video { visibility: hidden; }
+#screen-draw.no-cam #draw-cam, #screen-draw.no-cam .draw-stage video, .draw-remote { display: none; }
+.draw-remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+#screen-draw.no-cam.remote-video .draw-stage video, #screen-draw.remote-img .draw-remote { display: block; }
+#screen-draw.peer-cam-off .draw-stage video, #screen-draw.peer-cam-off .draw-remote { visibility: hidden; }
 .draw-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 .draw-cursor { --c: #ff4f8b; position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; border-radius: 50%; border: 3px solid #fff; background: transparent; box-shadow: 0 0 0 3px var(--c); pointer-events: none; transition: background .1s; }
 .draw-cursor.on { background: var(--c); }
