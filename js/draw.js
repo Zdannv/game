@@ -199,7 +199,7 @@ export function initDraw({ sfx, toast, onClose }) {
     sfx('click');
     camOn = !camOn;
     screen.classList.toggle('cam-off', !camOn);
-    $('#draw-cam').textContent = camOn ? '🙈 Sembunyiin muka' : '📷 Tampilin muka';
+    $('#draw-cam').textContent = camOn ? '📷 Tutup kamera' : '📸 Buka kamera';
     if (sync) sendNet('cam-hide', { off: !camOn });
     rtcTx?.replaceTrack(camOn ? stream?.getVideoTracks()[0] || null : null).catch(() => {});
   });
