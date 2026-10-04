@@ -819,6 +819,7 @@ body.exam #screen-game[data-theme="w-flower"] { background: linear-gradient(180d
 .draw-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 #screen-draw.cam-off .draw-stage video { visibility: hidden; }
 #screen-draw.no-cam #draw-cam, #screen-draw.no-cam .draw-stage video, .draw-remote { display: none; }
+#screen-draw:not(.no-cam) #draw-save { display: none; } /* Fall nggak perlu simpan foto; yang simpan cuma Aidan */
 .draw-remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 #screen-draw.no-cam.remote-video .draw-stage video, #screen-draw.remote-img .draw-remote { display: block; }
 #screen-draw.peer-cam-off .draw-stage video, #screen-draw.peer-cam-off .draw-remote { visibility: hidden; }
