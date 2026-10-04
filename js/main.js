@@ -641,7 +641,7 @@ mountOnline({
   startGame: (game, seed, extra) => startOnline(game, seed, null, extra),
   startLevel: (id, seed, extra) => startOnline('level', seed, id, extra),
   openTalk: () => { show('talk'); talk.setSync(true); },
-  openDraw: () => { show('draw'); drawOpen = true; draw.open(true); },
+  openDraw: (seed) => { show('draw'); drawOpen = true; draw.open(true, seed ?? null); },
 });
 
 function onlineParams(game, L) {

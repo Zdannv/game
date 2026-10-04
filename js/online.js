@@ -231,6 +231,7 @@ function start(inv) {
   if (inv.level != null) ui.startLevel(inv.level, inv.seed, inv.extra || {});
   else if (inv.game === 'talk') ui.openTalk();
   else if (inv.game === 'draw') ui.openDraw();
+  else if (inv.game === 'pictio') ui.openDraw(inv.seed);
   else ui.startGame(inv.game, inv.seed, inv.extra || {});
 }
 

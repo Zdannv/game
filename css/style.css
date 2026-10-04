@@ -823,7 +823,10 @@ body.exam #screen-game[data-theme="w-flower"] { background: linear-gradient(180d
 .draw-cursor.on { background: var(--c); }
 .draw-cursor[hidden] { display: none; }
 .draw-secret { position: absolute; left: 12px; right: 12px; top: 12px; margin: 0; background: rgba(43,27,51,.82); color: #fff; border-radius: 16px; padding: 10px 14px; font-size: 15px; text-align: center; }
-.draw-secret b { color: #ffd166; font-size: 20px; }
+.draw-secret b { color: #ffd166; font-size: 22px; display: block; margin: 4px 0 2px; letter-spacing: 1px; }
+.draw-secret small { display: block; font-size: 13px; opacity: .85; }
+.draw-secret .link-btn { color: #ffd1e3; font-size: 13px; margin-top: 4px; }
+.draw-secret .btn { margin-top: 8px; }
 .draw-guess { display: flex; gap: 8px; margin-top: 10px; }
 .draw-guess input { flex: 1; font: inherit; font-size: 16px; border: 2px solid var(--pink-soft); border-radius: 14px; padding: 9px 12px; }
 .draw-guess[hidden] { display: none; }

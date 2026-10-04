@@ -1,7 +1,8 @@
 // Gambar Udara: gambar pakai jari di depan kamera (deteksi tangan MediaPipe), coretannya live di HP pasangan.
 // Telunjuk diangkat = gambar, jari dikepal / dua jari / dicubit = berhenti. Bisa juga gambar pakai sentuhan layar.
 // Yang dikirim ke pasangan cuma titik-titik coretan (bukan video), lewat room Main Berdua.
-import { on as onNet, send as sendNet, peer as peerNet, me as meNet } from './online.js';
+import { on as onNet, send as sendNet, peer as peerNet, me as meNet, inviteGame } from './online.js';
+import { seeded } from './online-games.js';
 
 const $ = (s) => document.querySelector(s);
 const MP_VER = '0.10.14';
@@ -10,7 +11,10 @@ const MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/h
 const COLORS = ['#ff4f8b', '#8a5cff', '#22b8a7', '#ffb020', '#2b1b33', '#ffffff'];
 const WORDS = ['kucing', 'rumah', 'matahari', 'bunga', 'hati', 'ikan', 'pohon', 'mobil', 'bintang', 'bulan', 'kue', 'payung',
   'pelangi', 'balon', 'es krim', 'kupu-kupu', 'gunung', 'apel', 'topi', 'kacamata', 'burung', 'kado', 'cincin', 'kopi',
-  'pizza', 'awan', 'perahu', 'sepeda', 'kelinci', 'stetoskop', 'jam', 'gitar', 'bola', 'donat', 'semangka', 'pesawat'];
+  'pizza', 'awan', 'perahu', 'sepeda', 'kelinci', 'stetoskop', 'jam', 'gitar', 'bola', 'donat', 'semangka', 'pesawat',
+  'rumah sakit', 'jarum suntik', 'boneka', 'kamera', 'lilin', 'pantai', 'kereta', 'sepatu', 'surat', 'mahkota', 'robot',
+  'anjing', 'gajah', 'jerapah', 'singa', 'ular', 'pisang', 'wortel', 'roti', 'mie', 'piano', 'buku', 'pensil', 'televisi',
+  'kasur', 'bantal', 'gelas', 'sendok', 'tenda', 'api unggun', 'roket', 'hantu', 'monyet', 'pinguin', 'panda', 'stroberi'];
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
 
 export function initDraw({ sfx, toast, onClose }) {
@@ -23,7 +27,8 @@ export function initDraw({ sfx, toast, onClose }) {
   let stream = null, landmarker = null, raf = 0, lastDetect = 0;
   let pen = { down: false, id: 0, x: 0, y: 0, sx: null, sy: null };
   let outbox = [], flushT = 0;
-  let secret = null; // kata rahasia (yang gambar doang yang tau)
+  let game = null; // mode Tebak Gambar: { words, r, ok, drawer, left, timer }
+  const iDraw = () => !game || game.drawer === meNet().role; // pas Tebak Gambar, yang nebak nggak boleh nyoret
   const strokes = []; // semua coretan (punya kita & pasangan), buat digambar ulang pas ukuran berubah
 
   // ---------- Kanvas ----------
@@ -61,6 +66,7 @@ export function initDraw({ sfx, toast, onClose }) {
   // ---------- Pena (dipakai tangan & sentuhan) ----------
   const myKey = () => `${meNet().id}-${pen.id}`;
   function penDown(x, y) {
+    if (!iDraw()) return;
     pen.down = true; pen.id++;
     addPoint(myKey(), color, size, [x, y]);
     queue([x, y], true);
@@ -166,7 +172,7 @@ export function initDraw({ sfx, toast, onClose }) {
     if (pen.sx == null) { pen.sx = x; pen.sy = y; }
     pen.sx += (x - pen.sx) * 0.55; pen.sy += (y - pen.sy) * 0.55;
     x = pen.sx; y = pen.sy;
-    const drawing = gesture(lm);
+    const drawing = gesture(lm) && iDraw();
     const r = canvas.getBoundingClientRect();
     cursor.hidden = false;
     cursor.style.transform = `translate(${x * r.width}px, ${y * r.height}px)`;
@@ -227,71 +233,117 @@ export function initDraw({ sfx, toast, onClose }) {
     toast('Fotonya kesimpen 📸');
   }
 
-  // ---------- Tebak gambar ----------
+  // ---------- Mode Tebak Gambar: gantian gambar, pasangan nebak ----------
+  // Urutan kata sama di dua HP (seed dari ajakan). HP yang lagi gambar jadi patokan waktu & yang nentuin bener/salah.
+  const ROUNDS = 6, ROUND_TIME = 60;
   const guessBox = $('#draw-guess');
-  $('#draw-word').addEventListener('click', () => {
-    if (!sync) { toast('Tebak gambar butuh pasangan yang lagi online 💞'); return; }
-    sfx('pop');
-    secret = WORDS[Math.floor(Math.random() * WORDS.length)];
-    clearAll();
-    $('#draw-secret').hidden = false;
-    $('#draw-secret').innerHTML = `Gambar ini, jangan bilang-bilang 🤫 <b>${secret}</b>`;
-    sendNet('draw-quiz', {});
-  });
-  onNet('draw-quiz', () => {
-    if (!sync) return;
-    secret = null;
-    $('#draw-secret').hidden = true;
-    guessBox.hidden = false;
+  const banner = $('#draw-secret');
+  const roleOf = (r) => (r % 2 === 0 ? 'pasangan' : 'pengirim');
+  const blanks = (w) => w.split('').map((ch) => (ch === ' ' ? '&nbsp;&nbsp;' : ch === '-' ? '-' : '_')).join(' ');
+  function startGame(seed) {
+    const rng = seeded(seed);
+    const words = [...WORDS];
+    for (let i = words.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [words[i], words[j]] = [words[j], words[i]]; }
+    game = { words: words.slice(0, ROUNDS), r: 0, ok: 0 };
+    startRound();
+  }
+  function startRound() {
+    clearInterval(game.timer);
+    strokes.length = 0;
+    redraw();
+    penUp();
+    game.drawer = roleOf(game.r);
+    game.left = ROUND_TIME;
+    const mine = iDraw();
+    guessBox.hidden = mine;
     guessBox.querySelector('input').value = '';
-    toast(`${peerNet()?.name || 'Pasangan'} lagi gambar sesuatu, tebak! 🤔`);
+    banner.hidden = false;
+    renderBanner();
+    $('#draw-who').textContent = `🎨 Ronde ${game.r + 1}/${ROUNDS} · ✅ ${game.ok}`;
+    sfx('go');
+    if (!mine) toast(`${peerNet()?.name || 'Pasangan'} lagi gambar, tebak yaa! 🤔`);
+    game.timer = setInterval(() => {
+      if (!game) return;
+      game.left = Math.max(0, game.left - 1);
+      renderBanner();
+      if (game.left === 0 && iDraw()) finishRound(false);
+    }, 1000);
+  }
+  function renderBanner() {
+    const w = game.words[game.r];
+    banner.innerHTML = iDraw()
+      ? `Giliran kamu gambar 🤫 <b>${w}</b><small>⏱ ${game.left} detik · jangan tulis hurufnya yaa</small><button class="link-btn" type="button" data-pg-skip>lewati kata ini</button>`
+      : `Tebak gambar ${peerNet()?.name || 'pasangan'}! <b>${blanks(w)}</b><small>${w.replace(/[^a-z]/gi, '').length} huruf · ⏱ ${game.left} detik</small>`;
+  }
+  function finishRound(ok) { // cuma dipanggil di HP yang lagi gambar
+    if (!game) return;
+    const r = game.r;
+    sendNet('pg-next', { r, ok });
+    applyNext(r, ok);
+  }
+  function applyNext(r, ok) {
+    if (!game || r !== game.r) return;
+    clearInterval(game.timer);
+    const w = game.words[r];
+    if (ok) { game.ok++; sfx('win'); toast(`Bener! Jawabannya "${w}" 🎉`); }
+    else { sfx('lose'); toast(`Jawabannya "${w}" 😆`); }
+    game.r++;
+    $('#draw-who').textContent = `🎨 Ronde ${Math.min(game.r + 1, ROUNDS)}/${ROUNDS} · ✅ ${game.ok}`;
+    if (game.r >= ROUNDS) { setTimeout(endGame, 1200); return; }
+    setTimeout(() => { if (game) startRound(); }, 1800);
+  }
+  function endGame() {
+    if (!game) return;
+    const ok = game.ok;
+    clearInterval(game.timer);
+    game = null;
+    guessBox.hidden = true;
+    const label = ok >= 5 ? 'Sehati parah! 💍' : ok >= 3 ? 'Kompak! 💞' : 'Seru juga ya 😆';
+    if (ok >= 3) sfx('win');
+    banner.hidden = false;
+    banner.innerHTML = `Selesai! Kalian bener <b>${ok}/${ROUNDS}</b><small>${label}</small><button class="btn small-btn" type="button" data-pg-again>Main lagi 🔁</button>`;
+    $('#draw-who').textContent = `💞 Bareng ${peerNet()?.name || ''}`;
+  }
+  banner.addEventListener('click', (e) => {
+    if (e.target.closest('[data-pg-skip]') && game && iDraw()) { sfx('click'); finishRound(false); }
+    if (e.target.closest('[data-pg-again]')) { sfx('click'); inviteGame('pictio'); }
   });
   guessBox.addEventListener('submit', (e) => {
     e.preventDefault();
     const g = guessBox.querySelector('input').value.trim();
-    if (!g) return;
-    sendNet('draw-guess', { g });
+    if (!g || !game) return;
+    sendNet('draw-guess', { g, r: game.r });
     guessBox.querySelector('input').value = '';
   });
   onNet('draw-guess', (d) => {
-    if (!sync || !secret) return;
-    const ok = norm(d.g) === norm(secret);
-    sendNet('draw-result', { ok, g: d.g, word: ok ? secret : '' });
-    showResult(ok, d.g, secret, true);
-    if (ok) secret = null;
+    if (!sync || !game || !iDraw() || d.r !== game.r) return;
+    if (norm(d.g) === norm(game.words[game.r])) finishRound(true);
+    else { sendNet('pg-wrong', { g: d.g }); toast(`${peerNet()?.name || 'Pasangan'} nebak "${d.g}"… salah 😆`); }
   });
-  onNet('draw-result', (d) => { if (sync) showResult(d.ok, d.g, d.word, false); });
-  function showResult(ok, g, word, iDrew) {
-    const who = peerNet()?.name || 'Pasangan';
-    if (ok) {
-      sfx('win');
-      toast(iDrew ? `${who} bener! Jawabannya "${word}" 🎉` : `Bener! Jawabannya "${word}" 🎉`);
-      $('#draw-secret').hidden = true;
-      guessBox.hidden = true;
-    } else {
-      sfx('bad');
-      toast(iDrew ? `${who} nebak "${g}"… salah 😆` : `"${g}" salah, coba lagi 🤭`);
-    }
-  }
+  onNet('pg-wrong', (d) => { if (sync) { sfx('bad'); toast(`"${d.g}" salah, coba lagi 🤭`); } });
+  onNet('pg-next', (d) => { if (sync) applyNext(d.r, d.ok); });
 
   // ---------- Buka / tutup ----------
   window.addEventListener('resize', () => { if (running) fit(); });
   return {
-    async open(withPartner) {
+    async open(withPartner, seed = null) {
       sync = !!withPartner && !!peerNet();
       running = true;
-      secret = null;
-      $('#draw-secret').hidden = true;
+      if (game) clearInterval(game.timer);
+      game = null;
+      banner.hidden = true;
       guessBox.hidden = true;
       $('#draw-who').textContent = sync ? `💞 Bareng ${peerNet().name}` : '✍️ Gambar Udara';
-      $('#draw-word').hidden = !sync;
       requestAnimationFrame(fit);
+      if (seed != null && sync) requestAnimationFrame(() => startGame(seed));
       if (!stream) await startCamera();
       else loop();
     },
     close() {
       running = false;
       sync = false;
+      if (game) clearInterval(game.timer);
+      game = null;
       penUp();
       stopCamera();
       onClose?.();
