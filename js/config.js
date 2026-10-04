@@ -41,7 +41,7 @@ export const CONFIG = {
     wrong: 'Hmm, tanggalnya bukan itu 🤭 coba lagi yaa',
     people: {
       '77e1fbbbce7f7cf9c3890860d48a02ef5b5709299247df85ce0bb2b1f84d5707': 'fall',
-      'ef1fef826e0a5c68c65b6dd249116e1c927ad8c7ccb7e9522750df42e8a766b5': 'aidan',
+      '4935b73812dd87780ee8deae03d0bbcb125bbcdc05271066ca527ab029e4e79d': 'aidan',
     },
   },
 
