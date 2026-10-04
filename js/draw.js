@@ -1,6 +1,6 @@
 // Gambar Udara: gambar pakai jari di depan kamera (deteksi tangan MediaPipe), coretannya live di HP pasangan.
 // Telunjuk diangkat = gambar, jari dikepal / dua jari / dicubit = berhenti. Bisa juga gambar pakai sentuhan layar.
-// Yang dikirim ke pasangan cuma titik-titik coretan (bukan video), lewat room Main Berdua.
+// Yang dikirim ke pasangan: titik-titik coretan lewat room Main Berdua, plus muka Fall live ke HP Aidan (satu arah).
 import { on as onNet, send as sendNet, peer as peerNet, me as meNet, inviteGame } from './online.js';
 import { seeded } from './online-games.js';
 
@@ -121,6 +121,7 @@ export function initDraw({ sfx, toast, onClose }) {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
       video.srcObject = stream;
       await video.play();
+      offerCam();
     } catch {
       setStatus('Kamera nggak bisa dibuka. Gambar pakai jari di layar aja yaa ✍️');
       return;
@@ -199,6 +200,8 @@ export function initDraw({ sfx, toast, onClose }) {
     camOn = !camOn;
     screen.classList.toggle('cam-off', !camOn);
     $('#draw-cam').textContent = camOn ? '🙈 Sembunyiin muka' : '📷 Tampilin muka';
+    if (sync) sendNet('cam-hide', { off: !camOn });
+    rtcTx?.replaceTrack(camOn ? stream?.getVideoTracks()[0] || null : null).catch(() => {});
   });
   $('#draw-save').addEventListener('click', savePhoto);
 
@@ -210,12 +213,15 @@ export function initDraw({ sfx, toast, onClose }) {
     out.width = Math.round(r.width * 2); out.height = Math.round(r.height * 2);
     const o = out.getContext('2d');
     o.fillStyle = '#fff4f8'; o.fillRect(0, 0, out.width, out.height);
-    if (camOn && video.videoWidth) {
-      // sama kayak tampilan: video dipotong pas kotak (cover) & dicerminin
-      const vr = video.videoWidth / video.videoHeight, cr = out.width / out.height;
-      const sw = vr > cr ? video.videoHeight * cr : video.videoWidth, sh = vr > cr ? video.videoHeight : video.videoWidth / cr;
+    // Di HP Aidan yang kefoto muka Fall (video live, atau foto kecil kalau lagi mode cadangan)
+    const src = screen.classList.contains('remote-img') ? remoteImg : video;
+    const vw = src.videoWidth || src.naturalWidth, vh = src.videoHeight || src.naturalHeight;
+    if (camOn && vw && !screen.classList.contains('peer-cam-off')) {
+      // sama kayak tampilan: dipotong pas kotak (cover) & dicerminin
+      const vr = vw / vh, cr = out.width / out.height;
+      const sw = vr > cr ? vh * cr : vw, sh = vr > cr ? vh : vw / cr;
       o.save(); o.translate(out.width, 0); o.scale(-1, 1);
-      o.drawImage(video, (video.videoWidth - sw) / 2, (video.videoHeight - sh) / 2, sw, sh, 0, 0, out.width, out.height);
+      o.drawImage(src, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, out.width, out.height);
       o.restore();
     }
     o.drawImage(canvas, 0, 0, out.width, out.height);
@@ -232,6 +238,106 @@ export function initDraw({ sfx, toast, onClose }) {
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast('Fotonya kesimpen 📸');
   }
+
+  // ---------- Muka Fall live di HP Aidan (satu arah, muka Aidan nggak dikirim) ----------
+  // Utama WebRTC (video langsung HP ke HP). Kalau 8 detik nggak nyambung (sering di data seluler),
+  // ganti kirim foto kecil ±4x per detik lewat room.
+  const remoteImg = $('#draw-remote');
+  const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  let pc = null, rtcTx = null, rtcT = 0, snapT = 0, iceWait = [];
+  const amSender = () => meNet().role !== 'pengirim';
+  const showRemote = (mode) => {
+    screen.classList.toggle('remote-video', mode === 'video');
+    screen.classList.toggle('remote-img', mode === 'img');
+  };
+  function closePc() {
+    clearTimeout(rtcT); rtcT = 0;
+    clearInterval(snapT); snapT = 0;
+    pc?.close(); pc = null; rtcTx = null; iceWait = [];
+  }
+  function newPc() {
+    closePc();
+    pc = new RTCPeerConnection({ iceServers: ICE });
+    pc.onicecandidate = (e) => { if (e.candidate) sendNet('cam-ice', { c: e.candidate.toJSON() }); };
+    return pc;
+  }
+  async function addIce(c) {
+    if (!pc) return;
+    if (!pc.remoteDescription) { iceWait.push(c); return; }
+    try { await pc.addIceCandidate(c); } catch {}
+  }
+  async function flushIce() { const w = iceWait; iceWait = []; for (const c of w) await addIce(c); }
+  // HP Fall
+  async function offerCam() {
+    if (!sync || !stream || !amSender()) return;
+    try {
+      const p = newPc();
+      const track = stream.getVideoTracks()[0];
+      rtcTx = p.addTrack(track, stream);
+      if (!camOn) rtcTx.replaceTrack(null).catch(() => {});
+      await p.setLocalDescription(await p.createOffer());
+      try { // hemat kuota: ±350 kbps cukup buat muka
+        const prm = rtcTx.getParameters();
+        if (!prm.encodings?.length) prm.encodings = [{}];
+        prm.encodings[0].maxBitrate = 350000;
+        await rtcTx.setParameters(prm);
+      } catch {}
+      sendNet('cam-offer', { sdp: p.localDescription.toJSON() });
+      sendNet('cam-hide', { off: !camOn });
+    } catch { closePc(); }
+  }
+  const snap = document.createElement('canvas');
+  snap.width = 180; snap.height = 240; // 3:4, sama kayak kanvas
+  function startSnaps() {
+    if (snapT || !amSender()) return;
+    snapT = setInterval(() => {
+      if (!sync || !stream || !camOn || video.readyState < 2) return;
+      const vw = video.videoWidth, vh = video.videoHeight, cr = 3 / 4;
+      const sw = vw / vh > cr ? vh * cr : vw, sh = vw / vh > cr ? vh : vw / cr;
+      snap.getContext('2d').drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, snap.width, snap.height);
+      sendNet('cam-snap', { j: snap.toDataURL('image/jpeg', 0.55) });
+    }, 250);
+  }
+  onNet('cam-want', () => { if (sync && amSender() && stream) offerCam(); });
+  onNet('cam-answer', async (d) => {
+    if (!pc || !amSender()) return;
+    try { await pc.setRemoteDescription(d.sdp); await flushIce(); } catch {}
+  });
+  onNet('cam-snap-start', () => { if (sync && amSender()) startSnaps(); });
+  onNet('cam-snap-stop', () => { clearInterval(snapT); snapT = 0; });
+  // HP Aidan
+  const fallback = () => { if (sync && !amSender() && !screen.classList.contains('remote-video')) sendNet('cam-snap-start'); };
+  const waitRtc = () => { clearTimeout(rtcT); rtcT = setTimeout(() => { if (pc?.connectionState !== 'connected') fallback(); }, 8000); };
+  onNet('cam-offer', async (d) => {
+    if (!sync || amSender()) return;
+    try {
+      const p = newPc();
+      p.ontrack = (e) => { video.srcObject = e.streams[0] || new MediaStream([e.track]); video.play().catch(() => {}); };
+      p.onconnectionstatechange = () => {
+        if (p !== pc) return;
+        if (p.connectionState === 'connected') { clearTimeout(rtcT); showRemote('video'); sendNet('cam-snap-stop'); }
+        else if (p.connectionState === 'failed') { showRemote(null); fallback(); }
+      };
+      await p.setRemoteDescription(d.sdp);
+      await flushIce();
+      await p.setLocalDescription(await p.createAnswer());
+      sendNet('cam-answer', { sdp: p.localDescription.toJSON() });
+      waitRtc();
+    } catch { fallback(); }
+  });
+  onNet('cam-ice', (d) => { if (sync) addIce(d.c); });
+  onNet('cam-snap', (d) => {
+    if (!sync || amSender() || screen.classList.contains('remote-video')) return;
+    remoteImg.src = d.j;
+    showRemote('img');
+  });
+  onNet('cam-hide', (d) => { if (!amSender()) screen.classList.toggle('peer-cam-off', !!d.off); });
+  const remoteStop = () => {
+    closePc();
+    if (!amSender()) { video.srcObject = null; showRemote(null); screen.classList.remove('peer-cam-off'); }
+  };
+  onNet('cam-stop', () => { if (sync) remoteStop(); });
+  onNet('peer-left', remoteStop);
 
   // ---------- Mode Tebak Gambar: gantian gambar, pasangan nebak ----------
   // Urutan kata sama di dua HP (seed dari ajakan). HP yang lagi gambar jadi patokan waktu & yang nentuin bener/salah.
@@ -336,10 +442,21 @@ export function initDraw({ sfx, toast, onClose }) {
       $('#draw-who').textContent = sync ? `💞 Bareng ${peerNet().name}` : '✍️ Gambar Udara';
       requestAnimationFrame(fit);
       if (seed != null && sync) requestAnimationFrame(() => startGame(seed));
+      // Kamera cuma nyala di HP Fall. Di HP Aidan gambarnya pakai jari di layar (lebih hemat baterai).
+      const useCam = meNet().role !== 'pengirim';
+      screen.classList.toggle('no-cam', !useCam);
+      if (!useCam) {
+        stopCamera();
+        setStatus(sync ? `Gambar pakai jari di layar ✍️ · muka ${peerNet().name} live di sini` : 'Gambar pakai jari di layar ✍️');
+        if (sync) { sendNet('cam-want'); waitRtc(); }
+        return;
+      }
       if (!stream) await startCamera();
-      else loop();
+      else { loop(); offerCam(); }
     },
     close() {
+      if (sync) sendNet('cam-stop');
+      remoteStop();
       running = false;
       sync = false;
       if (game) clearInterval(game.timer);
