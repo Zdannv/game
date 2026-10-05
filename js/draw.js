@@ -1,5 +1,5 @@
 // Gambar Udara: gambar pakai jari di depan kamera (deteksi tangan MediaPipe), coretannya live di HP pasangan.
-// Telunjuk diangkat = gambar, jari dikepal / dua jari / dicubit = berhenti. Bisa juga gambar pakai sentuhan layar.
+// 1 jari (telunjuk) = gambar, buka telapak (5 jari) = hapus, kepal = berhenti. Bisa juga gambar pakai sentuhan layar.
 // Yang dikirim ke pasangan: titik-titik coretan lewat room Main Berdua, plus muka Fall live ke HP Aidan (satu arah).
 import { on as onNet, send as sendNet, peer as peerNet, me as meNet, inviteGame } from './online.js';
 import { seeded } from './online-games.js';
@@ -135,7 +135,7 @@ export function initDraw({ sfx, toast, onClose }) {
     if (landmarker) return landmarker;
     const { FilesetResolver, HandLandmarker } = await import(`${MP_URL}/vision_bundle.mjs`);
     const files = await FilesetResolver.forVisionTasks(`${MP_URL}/wasm`);
-    const opts = (delegate) => ({ baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'VIDEO', numHands: 1 });
+    const opts = (delegate) => ({ baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'VIDEO', numHands: 1, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.3, minTrackingConfidence: 0.3 }); // tracking lebih lengket biar tangan nggak gampang 'hilang'
     try { landmarker = await HandLandmarker.createFromOptions(files, opts('GPU')); }
     catch { landmarker = await HandLandmarker.createFromOptions(files, opts('CPU')); }
     return landmarker;
@@ -154,7 +154,7 @@ export function initDraw({ sfx, toast, onClose }) {
     try {
       setStatus('Nyiapin deteksi tangan…');
       await loadLandmarker();
-      setStatus('Telunjuk buat gambar ☝️ · kepalin tangan buat hapus ✊');
+      setStatus('☝️ 1 jari = gambar · 🖐️ buka telapak = hapus · ✊ kepal = berhenti');
       loop();
     } catch {
       setStatus('Deteksi tangan gagal dimuat. Gambar pakai jari di layar aja yaa ✍️');
@@ -168,40 +168,62 @@ export function initDraw({ sfx, toast, onClose }) {
   }
   function setStatus(t) { $('#draw-status').textContent = t; }
 
-  // Telunjuk doang = gambar · kepalan tangan (batu) = hapus
-  function gestureMode(lm) {
-    const up = (tip, pip) => lm[tip].y < lm[pip].y - 0.02;
-    const index = up(8, 6), middle = up(12, 10), ring = up(16, 14), pinky = up(20, 18);
-    const pinch = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y) < 0.05;
-    if (index && !middle && !ring && !pinch) return 'draw';
-    if (!index && !middle && !ring && !pinky) return 'erase';
+  // Baca bentuk jari dari koordinat 3D tangan (worldLandmarks), jadi tetap kebaca walau tangan miring / nunjuk ke kamera.
+  // Jari dianggap lurus kalau ujungnya jauh lebih jauh dari pergelangan dibanding ruas tengahnya.
+  // 1 jari (telunjuk) = gambar · telapak terbuka (4–5 jari) = hapus · lainnya (kepal dll) = berhenti
+  function gestureMode(w) {
+    const d = (a, b) => Math.hypot(w[a].x - w[b].x, w[a].y - w[b].y, w[a].z - w[b].z);
+    const ratio = (tip, pip) => d(tip, 0) / d(pip, 0);
+    const iR = ratio(8, 6), mR = ratio(12, 10), rR = ratio(16, 14), pR = ratio(20, 18);
+    const open = (r) => r > 1.12, shut = (r) => r < 1.06;
+    if (open(iR) && open(mR) && open(rR) && open(pR)) return 'erase';
+    if (open(iR) && !open(mR) && !open(rR) && !open(pR)) return 'draw';
+    if (open(iR) && shut(rR) && shut(pR) && mR < 1.1) return 'draw'; // jari tengah agak kebuka dikit, tetap gambar
     return 'none';
+  }
+  // Ganti mode baru kejadian kalau bentuk tangannya konsisten beberapa frame (biar nggak kedip-kedip),
+  // dan pas lagi gambar, salah baca sesaat nggak langsung motong garis.
+  const NEED = { draw: 2, erase: 3, none: 4 };
+  let mode = 'none', cand = 'none', candN = 0, lostAt = 0;
+  let filt = null; // penghalus posisi: { x, y, t }
+  function smooth(x, y, now) {
+    if (!filt) { filt = { x, y, t: now }; return [x, y]; }
+    const dt = Math.max(1, now - filt.t) / 1000;
+    const speed = Math.hypot(x - filt.x, y - filt.y) / dt; // layar per detik
+    const a = Math.min(0.9, 0.28 + speed * 0.9); // pelan = halus & presisi, cepat = langsung ngikut
+    filt.x += (x - filt.x) * a; filt.y += (y - filt.y) * a; filt.t = now;
+    return [filt.x, filt.y];
+  }
+  function setMode(m) {
+    if (m === mode) return;
+    if (pen.down) penUp();
+    if ((m === 'erase') !== (mode === 'erase')) filt = null; // titik acuan pindah (telunjuk ⇄ tengah telapak), jangan diseret
+    mode = m;
   }
   function loop() {
     raf = requestAnimationFrame(loop);
     if (!running || !landmarker || video.readyState < 2) return;
     const now = performance.now();
-    if (now - lastDetect < 45) return; // ±20 kali per detik, biar HP nggak panas
+    if (now - lastDetect < 33) return; // ±30 kali per detik
     lastDetect = now;
     let res;
     try { res = landmarker.detectForVideo(video, now); } catch { return; }
-    const lm = res?.landmarks?.[0];
-    if (!lm) {
-      handActive = false;
-      cursor.hidden = true;
-      if (pen.down) penUp();
-      pen.sx = null;
+    const lm = res?.landmarks?.[0], wl = res?.worldLandmarks?.[0];
+    if (!lm || !wl) {
+      // tangan hilang sebentar (keluar frame / blur): tunggu 200 ms dulu baru angkat pena
+      if (!lostAt) lostAt = now;
+      if (now - lostAt > 200) { handActive = false; cursor.hidden = true; setMode('none'); cand = 'none'; candN = 0; filt = null; }
       return;
     }
+    lostAt = 0;
     handActive = true;
-    const mode = canDraw() ? gestureMode(lm) : 'none';
-    const tip = mode === 'erase' ? 9 : 8; // kepalan: titik tengah telapak, biar enak ngehapusnya
-    // Kamera depan ditampilin kayak cermin → x dibalik
-    let x = 1 - lm[tip].x, y = lm[tip].y;
-    // Haluskan gerakan biar garisnya nggak goyang
-    if (pen.sx == null) { pen.sx = x; pen.sy = y; }
-    pen.sx += (x - pen.sx) * 0.55; pen.sy += (y - pen.sy) * 0.55;
-    x = pen.sx; y = pen.sy;
+    const seen = canDraw() ? gestureMode(wl) : 'none';
+    if (seen === cand) candN++; else { cand = seen; candN = 1; }
+    if (cand !== mode && candN >= NEED[cand]) setMode(cand);
+    // Gambar: ujung telunjuk · hapus: tengah telapak. Kamera depan ditampilin kayak cermin → x dibalik
+    const px = mode === 'erase' ? (lm[0].x + lm[5].x + lm[9].x + lm[17].x) / 4 : lm[8].x;
+    const py = mode === 'erase' ? (lm[0].y + lm[5].y + lm[9].y + lm[17].y) / 4 : lm[8].y;
+    const [x, y] = smooth(1 - px, py, now);
     const r = canvas.getBoundingClientRect();
     cursor.hidden = false;
     cursor.style.transform = `translate(${x * r.width}px, ${y * r.height}px)`;
@@ -209,7 +231,7 @@ export function initDraw({ sfx, toast, onClose }) {
     cursor.classList.toggle('erase', mode === 'erase');
     cursor.style.setProperty('--c', color);
     if (mode === 'draw') { if (!pen.down) penDown(x, y); else penMove(x, y); }
-    else { if (pen.down) penUp(); if (mode === 'erase') eraseAt(x, y); }
+    else if (mode === 'erase') eraseAt(x, y);
   }
 
   // ---------- Toolbar ----------
@@ -432,7 +454,7 @@ export function initDraw({ sfx, toast, onClose }) {
     }
     const letters = (mine ? game.answer : game.mask || '').replace(/[^a-z*]/gi, '').length;
     banner.innerHTML = mine
-      ? `Giliran kamu gambar \u{1F92B} <b>${game.answer}</b><small>⏱ ${game.left} detik · telunjuk buat gambar, kepalin tangan buat hapus</small><button class="link-btn" type="button" data-pg-skip>lewati kata ini</button>`
+      ? `Giliran kamu gambar \u{1F92B} <b>${game.answer}</b><small>⏱ ${game.left} detik · ☝️ gambar · 🖐️ hapus · ✊ berhenti</small><button class="link-btn" type="button" data-pg-skip>lewati kata ini</button>`
       : `Tebak gambar ${peerNet()?.name || 'pasangan'}! <b>${blanks(game.mask || '')}</b><small>${letters} huruf · ⏱ ${game.left} detik</small>`;
   }
   function finishRound(ok) { // cuma dipanggil di HP yang lagi gambar
