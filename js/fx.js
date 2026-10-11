@@ -1,6 +1,8 @@
 // Emoji 3D (Microsoft Fluent Emoji, lisensi MIT: img/fx/LICENSE.txt) biar tampilannya sama & rapi di semua HP.
 // FX[emoji tanpa FE0F] = nama file di img/fx/. Emoji yang nggak ada di sini tetap pakai emoji bawaan HP.
 export const FX = {
+  "🐧": "1f427",
+  "🐼": "1f43c",
   "🔄": "1f504",
   "🥇": "1f947",
   "❤‍🔥": "2764-200d-1f525",
