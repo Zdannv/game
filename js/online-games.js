@@ -759,7 +759,7 @@ export const ONLINE_GAMES = {
   bomb: { name: 'Bom Cinta', icon: '💣', desc: 'Taruh bom, kabur, ledakin pasanganmu!', start: startBombDuo, countdown: true },
   penalty: { name: 'Adu Penalti', icon: '⚽', desc: 'Gantian nendang & jaga gawang, 5 tendangan', start: startPenaltyDuo, countdown: true },
   pillow: { name: 'Perang Bantal', icon: '🛏️', desc: 'Saling lempar bantal, sembunyi di balik kasur', start: startPillowDuo, countdown: true },
-  cook: { name: 'Masak Bareng', icon: '🧑‍🍳', desc: 'Masak bareng di satu dapur kayak Overcooked, kejar pesanan!', start: startCookDuo, countdown: true },
+  cook: { name: 'Masak Bareng', icon: '🧑‍🍳', desc: 'Masak bareng di satu dapur, kejar pesanan pelanggan!', start: startCookDuo, countdown: true },
   race: { name: 'Ngebut Pulang', icon: '🏍️', desc: 'Balapan motor, siapa yang duluan nyampe finish', start: startRaceDuo, countdown: true },
   fight: { name: 'Gelut Sayang', icon: '🥊', desc: 'Duel langsung, muka kalian jadi petarungnya', start: startFightDuo, countdown: true },
   fly: { name: 'Terbang Balapan', icon: '🕊️', desc: 'Siapa yang paling jauh terbangnya', start: startFlyRace, countdown: true },

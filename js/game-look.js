@@ -8,8 +8,8 @@ export const GAME_COLOR = {
   catchco: '#ff5c8a', stackco: '#ec5fa6', throwco: '#ff6f91', pictio: '#ff8f3f', draw: '#14b3a3', talk: '#9b7bff',
 };
 export const GAME_SUB = {
-  bomb: 'Ala Bomberman', coop: 'Api & air, kerja sama',
-  race: 'Balapan motor', fight: 'Duel gelut', penalty: 'Tendang & jaga gawang', pillow: 'Lempar-lemparan bantal', cook: 'Masak ala Overcooked',
+  bomb: 'Taruh bom, kabur, menang!', coop: 'Api & air, kerja sama',
+  race: 'Balapan motor', fight: 'Duel gelut', penalty: 'Tendang & jaga gawang', pillow: 'Lempar-lemparan bantal', cook: 'Masak & sajiin pesanan',
   fly: 'Tap buat terbang', runner: 'Lompatin rintangan', stack: 'Susun setinggi-tingginya', catch: 'Tangkap yang jatuh', timing: 'Tap pas di zona',
   simon: 'Ingat urutannya', memory: 'Cari kartu kembar', pop: 'Tap secepatnya', puzzle: 'Susun foto kalian', odd: 'Cari yang beda',
   throw: 'Lempar ke target', maze: 'Cari jalan keluar', quiz: 'Jawab soal tentang kalian',

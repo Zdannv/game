@@ -31,7 +31,7 @@ export function startBomb(stage, p, api) {
 
   const duel = p.duel || null;
   const seedBase = (p.seed || 777) >>> 0;
-  let level = 0, wins = 0, round = 0;
+  let level = p.botLevel || 0, wins = 0, round = 0;
   let grid, players, bombs, flames, powers, time, state, stateT, roundResult;
   let done = false, raf = 0, last = performance.now(), lastStats = '', lastSent = 0;
   const offs = [];
@@ -58,7 +58,7 @@ export function startBomb(stage, p, api) {
     } else {
       players = [mk(0, { img: loadImage(p.face), emoji: p.emoji || '😊', name: p.name || 'Kamu', ring: '#ff8fb7' })];
       const bots = [['🤖', 'Robot'], ['🦊', 'Rubah'], ['🐻', 'Beruang']];
-      for (let i = 1; i <= 3; i++) players.push(mk(i, { img: null, emoji: bots[i - 1][0], name: bots[i - 1][1], ring: '#c9b6ff', bot: true }));
+      for (let i = 1; i <= (p.bots || 3); i++) players.push(mk(i, { img: null, emoji: bots[i - 1][0], name: bots[i - 1][1], ring: '#c9b6ff', bot: true }));
     }
     bombs = []; flames = []; powers = []; time = ROUND; state = 'intro'; stateT = 0; roundResult = null;
   }
@@ -262,6 +262,7 @@ export function startBomb(stage, p, api) {
     }
   }
   function nextRound() {
+    if (!duel && !p.endless) { end(); return; }
     if (!duel && roundResult !== 'lose') {
       if (roundResult === 'win') wins++;
       level++;
@@ -308,7 +309,7 @@ export function startBomb(stage, p, api) {
     const banner = (t) => { ctx.textAlign = 'center'; ctx.font = `700 ${Math.round(Math.min(40, W / 10))}px Fredoka, sans-serif`; ctx.lineWidth = 7; ctx.strokeStyle = '#fff'; ctx.fillStyle = '#e8558f'; ctx.strokeText(t, W / 2, H * 0.45); ctx.fillText(t, W / 2, H * 0.45); };
     if (state === 'intro') banner(duel ? 'Siap… Bom! 💣' : `Ronde ${wins + 1}`);
     if (state === 'over') banner(roundResult === 'win' ? 'Menang! 🏆' : roundResult === 'lose' ? 'Kena bom 😵' : 'Seri!');
-    const s = duel ? `💣 ${me().name} vs ${opp().name}` : `💣 Menang ${wins} · 🏆 ${Math.max(p.best || 0, wins)}`;
+    const s = duel ? `💣 ${me().name} vs ${opp().name}` : p.endless ? `💣 Menang ${wins} · 🏆 ${Math.max(p.best || 0, wins)}` : `💣 Lawan tersisa ${players.filter((q) => q.bot && q.alive).length}`;
     if (s !== lastStats) { api.setStats(s); lastStats = s; }
   }
 
@@ -326,6 +327,7 @@ export function startBomb(stage, p, api) {
   function end() {
     if (done) return;
     done = true;
+    if (!duel && !p.endless) { const win = roundResult === 'win'; api.finish({ win, stars: win ? (time > 70 ? 3 : time > 35 ? 2 : 1) : 0, detail: win ? `Semua lawan kena bom! Sisa waktu ${Math.ceil(time)} dtk 💣` : roundResult === 'draw' ? 'Waktunya habis, coba lebih cepet!' : 'Kena bom duluan 😵 coba lagi!' }); return; }
     if (!duel) { api.finish({ win: true, score: wins, detail: `Menang ${wins} ronde 💣` }); return; }
     api.finish({ win: roundResult === 'win', draw: roundResult === 'draw', result: roundResult });
   }

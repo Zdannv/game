@@ -39,7 +39,7 @@ export function startRace(stage, p, api) {
   let nextCar = 30, nextHeart = 60, nextSign = 40;
   let lives = p.lives || 3, hurtT = 0, done = false, raf = 0, last = performance.now(), elapsed = 0;
   let collected = 0, nearMiss = 0, bonus = 0, holding = false, lastStats = '', started = false;
-  const finish = p.finish || 0; // meter (mode berdua)
+  const finish = p.finish || p.goal || 0; // meter (mode berdua / mode level)
 
   // Tikungan halus: lengkungan jalan berubah pelan seiring jarak, sama di dua HP (pakai rng)
   const bends = []; for (let i = 0; i < 400; i++) bends.push(rnd(-1, 1) * (i < 2 ? 0 : 1));
@@ -238,7 +238,7 @@ export function startRace(stage, p, api) {
     const hearts3 = `${'❤️'.repeat(Math.max(0, lives))}${'🤍'.repeat((p.lives || 3) - Math.max(0, lives))}`;
     const s = race
       ? `🏍️ Kamu ${meters} m · ${race.name} ${Math.floor(race.ghost()?.z ?? 0)} m / ${finish} m`
-      : `🏍️ Skor ${score()} · 🏆 ${Math.max(p.best || 0, score())} · ${hearts3}`;
+      : p.goal ? `🏍️ ${meters}/${p.goal} m · ${hearts3}` : `🏍️ Skor ${score()} · 🏆 ${Math.max(p.best || 0, score())} · ${hearts3}`;
     if (s !== lastStats) { api.setStats(s); lastStats = s; }
   }
   const score = () => Math.floor(player.z / 10) + bonus;
@@ -251,12 +251,14 @@ export function startRace(stage, p, api) {
     race?.tick({ z: player.z, x: player.x, done, tm: elapsed });
     draw();
   }
+  if (window.__lqTest) window.__race = { get cars() { return cars; }, player };
   raf = requestAnimationFrame(loop);
 
   function end(win) {
     if (done) return;
     done = true;
     const detail = `Nempuh ${Math.floor(player.z)} m · ${nearMiss}x nyalip mepet · ${collected} 💖`;
+    if (p.goal) { api.finish(win ? { win: true, stars: Math.max(1, lives), detail: `Nyampe finish! ${detail}` } : { win: false, stars: 0, detail: `Baru ${Math.floor(player.z)} dari ${p.goal} m` }); return; }
     if (race) { race.tick({ z: player.z, x: player.x, done: true, tm: elapsed }, true); api.finish({ win, time: elapsed, z: player.z, detail }); return; }
     api.finish({ win: true, score: score(), detail });
   }

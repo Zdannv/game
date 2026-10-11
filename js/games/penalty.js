@@ -38,7 +38,8 @@ export function startPenalty(stage, p, api) {
   const iShoot = (i) => (duel ? shooterRole(i) === myRole : i % 2 === 0);
 
   let turn = 0, phase = 'aim', phaseT = 0, done = false, raf = 0, last = performance.now(), lastStats = '';
-  let lives = 3, level = 0, score = 0;
+  let lives = 3, level = p.botLevel || 0, score = 0;
+  const goalMode = !duel && !p.endless && p.goal;
   const goals = { me: [], opp: [] }; // hasil tiap tendangan: true gol / false gagal
   let mine = null, theirs = null; // pilihan kita & lawan buat giliran ini
   let anim = null; // { shot, dive, saved, goal, t }
@@ -137,12 +138,13 @@ export function startPenalty(stage, p, api) {
         api.sfx(anim.goal === myKick ? 'win' : 'bad');
         if (!duel) {
           const good = myKick ? anim.goal : !anim.goal;
-          if (good) { score++; api.streak(true); } else { lives--; api.streak(false); }
+          if (good) { score++; api.streak(true); } else { if (!goalMode) lives--; api.streak(false); }
           if (turn % 2 === 1) level++;
         }
       }
     } else if (phase === 'result' && phaseT > 1.5) {
       if (!duel && lives <= 0) return end();
+      if (goalMode && turn >= 9) return end();
       if (duel && decided()) return end();
       turn++;
       startTurn();
@@ -241,7 +243,7 @@ export function startPenalty(stage, p, api) {
       if (iShoot(turn) && !mine) big('cepat = tinggi · pelan = rendah', H * 0.67, 14, '#8a3f6e');
     }
     if (msg) big(msg, H * 0.58, 38, msg.startsWith('GOO') ? '#ff6f9f' : '#5b3fa8');
-    const s = duel ? `⚽ ${look.me.name} ${tally(goals.me)} - ${tally(goals.opp)} ${look.opp.name}` : `⚽ Skor ${score} · 🏆 ${Math.max(p.best || 0, score)} · ${'❤️'.repeat(Math.max(0, lives))}${'🤍'.repeat(3 - Math.max(0, lives))}`;
+    const s = duel ? `⚽ ${look.me.name} ${tally(goals.me)} - ${tally(goals.opp)} ${look.opp.name}` : goalMode ? `⚽ Berhasil ${score} · target ${p.goal} · giliran ${Math.min(10, turn + 1)}/10` : `⚽ Skor ${score} · 🏆 ${Math.max(p.best || 0, score)} · ${'❤️'.repeat(Math.max(0, lives))}${'🤍'.repeat(3 - Math.max(0, lives))}`;
     if (s !== lastStats) { api.setStats(s); lastStats = s; }
   }
 
@@ -258,6 +260,7 @@ export function startPenalty(stage, p, api) {
   function end() {
     if (done) return;
     done = true;
+    if (goalMode) { const win = score >= p.goal; api.finish({ win, stars: win ? (score >= p.goal + 2 ? 3 : score >= p.goal + 1 ? 2 : 1) : 0, detail: `${score}/10 berhasil (gol + tepisan) · target ${p.goal}` }); return; }
     if (!duel) { api.finish({ win: true, score, detail: `${score} kali berhasil (gol + tepisan)` }); return; }
     const a = tally(goals.me), b = tally(goals.opp);
     api.finish({ win: a > b, draw: a === b, myGoals: a, oppGoals: b });

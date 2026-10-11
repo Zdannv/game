@@ -153,6 +153,7 @@ export function startCook(stage, p, api) {
       api.sfx('msg');
     }
     if (miss >= MAX_MISS && !over) { over = true; setTimeout(end, 1200); }
+    if (p.goal && !duel && served >= p.goal && !over) { over = true; api.sfx('win'); setTimeout(end, 1000); }
   }
 
   // ---- Online ----
@@ -358,7 +359,7 @@ export function startCook(stage, p, api) {
     }
     ctx.globalAlpha = 1;
     pad.querySelector('.ck-chop').style.opacity = tg && MAP[tg[1]][tg[0]] === 'B' ? 1 : 0.5;
-    const s = `🍳 Kesaji ${served} · ${'❤️'.repeat(Math.max(0, MAX_MISS - miss))}${'🤍'.repeat(Math.min(MAX_MISS, miss))}${!duel ? ` · 🏆 ${Math.max(p.best || 0, served)}` : ''}`;
+    const s = `🍳 Kesaji ${served}${p.goal && !duel ? `/${p.goal}` : ''} · ${'❤️'.repeat(Math.max(0, MAX_MISS - miss))}${'🤍'.repeat(Math.min(MAX_MISS, miss))}${!duel && !p.goal ? ` · 🏆 ${Math.max(p.best || 0, served)}` : ''}`;
     if (s !== lastStats) { api.setStats(s); lastStats = s; }
   }
 
@@ -385,6 +386,7 @@ export function startCook(stage, p, api) {
   function end() {
     if (done) return;
     done = true;
+    if (p.goal && !duel) { const win = served >= p.goal; api.finish({ win, stars: win ? [3, 2, 1][Math.min(2, miss)] : 0, detail: win ? `Nyajiin ${served} pesanan${miss ? `, ${miss} pelanggan kabur` : ' tanpa ada yang kabur 🌟'}` : `Baru ${served} dari ${p.goal} pesanan` }); return; }
     api.finish(duel ? { win: served > 0, served } : { win: true, score: served, detail: `Nyajiin ${served} pesanan 🍳` });
   }
 

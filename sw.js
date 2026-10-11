@@ -1,6 +1,6 @@
 // Service worker: bikin game bisa dipasang ke home screen, bisa dimainin offline,
 // dan menampilkan notifikasi streak.
-const CACHE = 'love-quest-v33';
+const CACHE = 'love-quest-v34';
 const FONT_CACHE = 'love-quest-fonts';
 const FX_CACHE = 'lq-fx-v1'; // ikon 3D (img/fx): nggak ikut kehapus tiap update
 
@@ -8,7 +8,7 @@ const FX_CACHE = 'lq-fx-v1'; // ikon 3D (img/fx): nggak ikut kehapus tiap update
 // (Kalau nambah file baru, tambahin juga di sini.)
 const PRECACHE = [
   '/', '/index.html', '/manifest.webmanifest', '/css/style.css',
-  '/js/main.js', '/js/pause.js', '/js/config.js', '/js/audio.js', '/js/confetti.js', '/js/util.js', '/js/fx.js', '/js/game-look.js', '/js/pet.js', '/js/toon.js', '/js/streak.js', '/js/kita.js', '/js/couple.js', '/js/talk.js', '/js/talk-cards.js', '/js/online.js', '/js/online-games.js', '/js/duo-levels.js', '/js/couple-questions.js', '/js/draw.js',
+  '/js/main.js', '/js/pause.js', '/js/config.js', '/js/audio.js', '/js/confetti.js', '/js/util.js', '/js/fx.js', '/js/game-look.js', '/js/pet.js', '/js/pet3d.js', '/js/toon.js', '/js/streak.js', '/js/kita.js', '/js/couple.js', '/js/talk.js', '/js/talk-cards.js', '/js/online.js', '/js/online-games.js', '/js/duo-levels.js', '/js/couple-questions.js', '/js/draw.js',
   '/js/games/memory.js', '/js/games/catch.js', '/js/games/pop.js', '/js/games/quiz.js', '/js/games/puzzle.js',
   '/js/games/odd.js', '/js/games/simon.js', '/js/games/fly.js', '/js/games/race.js', '/js/games/fight.js', '/js/games/penalty.js', '/js/games/pillow.js', '/js/games/cook.js', '/js/games/bomb.js', '/js/games/coop.js', '/js/games/stack.js', '/js/games/runner.js',
   '/js/games/throw.js', '/js/games/maze.js', '/js/games/timing.js',
