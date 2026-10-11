@@ -967,3 +967,17 @@ img.fx { display: inline-block; width: 1.18em; height: 1.18em; vertical-align: -
 .fight-pad .fp-act .cp-swap { width: auto; min-width: 64px; height: 54px; border-radius: 18px; display: flex; align-items: center; gap: 6px; padding: 0 12px 0 6px; font-size: 13px; line-height: 1.1; font-weight: 700; color: #5a2a52; white-space: nowrap; }
 .fight-pad .fp-act .cp-swap img:not(.fx) { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 3px solid var(--sw, #ff7a2f); flex-shrink: 0; }
 .fight-pad .fp-act .cp-swap img.fx { width: 1.2em; height: 1.2em; }
+
+/* Pilih hewan peliharaan */
+.pet-head { grid-template-columns: 1fr auto auto; }
+.pet-head .pet-xp { grid-column: span 3; }
+.pet-swap { border: 0; background: #fff; border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 12px; font-weight: 700; color: #8a3f6e; box-shadow: 0 2px 0 #f3c3d8; white-space: nowrap; }
+.pet-choose { text-align: center; padding-top: 6px; }
+.pet-choose h2 { margin: 0 0 4px; font-size: 22px; color: var(--ink); }
+.pet-choose p { margin: 0 0 14px; font-size: 14px; color: var(--ink-soft); }
+.pet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+.pet-grid button { border: 2px solid #ffe1ee; background: #fff; border-radius: 20px; padding: 12px 8px 10px; font: inherit; color: #5a2a52; display: flex; flex-direction: column; align-items: center; gap: 4px; box-shadow: 0 4px 0 #f3c3d8; }
+.pet-grid button span { font-size: 54px; line-height: 1; }
+.pet-grid button b { font-size: 15px; }
+.pet-grid button.on { border-color: #ff6f9f; background: #fff0f6; }
+.pet-grid button:active { transform: translateY(3px); box-shadow: 0 1px 0 #f3c3d8; }

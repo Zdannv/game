@@ -13,6 +13,15 @@ const FOODS = [
   { em: '🍎', name: 'Apel', h: 12 }, { em: '🍙', name: 'Onigiri', h: 20 },
   { em: '🍗', name: 'Ayam', h: 28 }, { em: '🍭', name: 'Permen', h: 8, f: 10 },
 ];
+// Pilihan hewan (ikon 3D). Anak ayam punya wujud bayi (🐣) di level 1.
+const ANIMALS = [
+  { k: 'ayam', em: '🐥', baby: '🐣', label: 'Anak Ayam', name: 'Mochi' }, { k: 'kucing', em: '🐱', label: 'Kucing', name: 'Oyen' },
+  { k: 'anjing', em: '🐶', label: 'Anjing', name: 'Choco' }, { k: 'kelinci', em: '🐰', label: 'Kelinci', name: 'Bunny' },
+  { k: 'hamster', em: '🐹', label: 'Hamster', name: 'Kiki' }, { k: 'panda', em: '🐼', label: 'Panda', name: 'Bambu' },
+  { k: 'pinguin', em: '🐧', label: 'Pinguin', name: 'Pingu' }, { k: 'rubah', em: '🦊', label: 'Rubah', name: 'Rubi' },
+  { k: 'koala', em: '🐨', label: 'Koala', name: 'Kolo' }, { k: 'unicorn', em: '🦄', label: 'Unicorn', name: 'Pelangi' },
+];
+const animalOf = (s) => ANIMALS.find((a) => a.k === s.kind);
 const OUTFITS = [{ lvl: 2, em: '🎀' }, { lvl: 3, em: '🧢' }, { lvl: 4, em: '🕶️' }, { lvl: 5, em: '🎩' }, { lvl: 7, em: '👑' }];
 const ACT = { makan: 'kasih makan', mandi: 'mandiin', main: 'ngajak main', tidur: 'nidurin', bangun: 'bangunin' };
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
@@ -20,7 +29,7 @@ const clamp = (v) => Math.max(0, Math.min(100, v));
 const levelOf = (xp) => 1 + Math.floor(Math.sqrt(xp / 30));
 const xpAt = (l) => (l - 1) * (l - 1) * 30;
 
-const fresh = () => ({ name: 'Mochi', xp: 0, hunger: 70, clean: 70, fun: 70, energy: 80, sleep: false, at: Date.now(), log: [], daily: { d: today(), fall: false, aidan: false, bonus: false }, outfit: null });
+const fresh = () => ({ kind: null, name: 'Mochi', xp: 0, hunger: 70, clean: 70, fun: 70, energy: 80, sleep: false, at: Date.now(), log: [], daily: { d: today(), fall: false, aidan: false, bonus: false }, outfit: null });
 function decay(s, now = Date.now()) {
   const h = Math.max(0, (now - (s.at || now)) / 3.6e6);
   s.hunger = clamp(s.hunger - 4 * h); s.clean = clamp(s.clean - 2.5 * h); s.fun = clamp(s.fun - 3.5 * h);
@@ -88,9 +97,22 @@ export function initPet({ sfx, toast }) {
     return { em: '💖', t: 'Seneng banget!' };
   }
 
+  // Pilih hewan (pertama kali, atau pas mau ganti)
+  let choosing = false;
+  function renderChooser() {
+    const cur = st?.kind;
+    root.innerHTML = `
+      <div class="pet-choose">
+        <h2>${cur ? 'Ganti hewan peliharaan' : 'Pilih hewan peliharaan kalian'} 🐾</h2>
+        <p>${cur ? 'Level & XP-nya tetap kebawa kok' : 'Nanti dirawat berdua, dikasih makan, dimandiin, diajak main 💞'}</p>
+        <div class="pet-grid">${ANIMALS.map((a) => `<button data-pick="${a.k}" class="${cur === a.k ? 'on' : ''}"><span>${a.em}</span><b>${a.label}</b></button>`).join('')}</div>
+        ${cur ? '<button class="link-btn" data-pick="batal">batal</button>' : ''}
+      </div>`;
+  }
   function render() {
-    if (!st) { root.innerHTML = '<p class="pet-load">Nyiapin peliharaan… 🐣</p>'; return; }
-    const s = st, lvl = levelOf(s.xp), m = mood(s);
+    if (!st) { root.innerHTML = '<p class="pet-load">Nyiapin peliharaan… 🐾</p>'; return; }
+    if (!st.kind || choosing) { renderChooser(); return; }
+    const s = st, lvl = levelOf(s.xp), m = mood(s), A = animalOf(s) || ANIMALS[0];
     const outfit = s.outfit && OUTFITS.find((o) => o.em === s.outfit && o.lvl <= lvl) ? s.outfit : null;
     const bar = (em, label, v) => `<div class="pet-stat"><span>${em}</span><div><small>${label}</small><i><b style="width:${Math.round(v)}%;--c:${v < 30 ? '#ff4d6d' : v < 60 ? '#ffb020' : '#2fbf71'}"></b></i></div></div>`;
     const last = s.log?.[0];
@@ -98,12 +120,13 @@ export function initPet({ sfx, toast }) {
       <div class="pet-head">
         <button class="pet-name" data-pet="rename">${esc(s.name)} ✏️</button>
         <span class="pet-lvl">Lv ${lvl}</span>
+        <button class="pet-swap" data-pet="swap">${A.em} ganti hewan</button>
         <div class="pet-xp"><b style="width:${Math.round(((s.xp - xpAt(lvl)) / (xpAt(lvl + 1) - xpAt(lvl))) * 100)}%"></b></div>
       </div>
       <div class="pet-room ${s.sleep ? 'night' : ''}" id="pet-room">
         <div class="pet-bubble">${m.em} ${m.t}</div>
         <div class="pet-body ${s.sleep ? 'sleep' : ''}" style="--sz:${Math.min(1.35, 0.85 + lvl * 0.06)}">
-          <span class="pet-em">${lvl < 2 ? '🐣' : '🐥'}</span>
+          <span class="pet-em">${lvl < 2 && A.baby ? A.baby : A.em}</span>
           ${outfit ? `<span class="pet-outfit">${outfit}</span>` : ''}
         </div>
         <div class="pet-floor"></div>
@@ -179,6 +202,15 @@ export function initPet({ sfx, toast }) {
   let cleanup = () => {};
 
   root.addEventListener('click', (e) => {
+    const pick = e.target.closest('[data-pick]');
+    if (pick) {
+      sfx('click');
+      if (pick.dataset.pick === 'batal') { choosing = false; render(); return; }
+      const a = ANIMALS.find((x) => x.k === pick.dataset.pick);
+      choosing = false;
+      act('pilih', (s) => { const first = !s.kind; s.kind = a.k; if (first || !s.named) s.name = a.name; return first ? `Halo, ${s.name}! ${a.em} Rawat bareng yaa 💞` : `Sekarang peliharaan kalian ${a.label} ${a.em}`; });
+      return;
+    }
     const f = e.target.closest('[data-food]');
     if (f) {
       mode = null;
@@ -200,8 +232,9 @@ export function initPet({ sfx, toast }) {
     if (k === 'outfit') act('outfit', (s) => { s.outfit = s.outfit === b.dataset.v ? null : b.dataset.v; return false; });
     if (k === 'rename') {
       const n = prompt('Kasih nama peliharaan kalian:', st.name);
-      if (n && n.trim()) act('nama', (s) => { s.name = n.trim().slice(0, 16); return `Namanya sekarang ${s.name} 💕`; });
+      if (n && n.trim()) act('nama', (s) => { s.name = n.trim().slice(0, 16); s.named = true; return `Namanya sekarang ${s.name} 💕`; });
     }
+    if (k === 'swap') { choosing = true; render(); }
   });
 
   return {
@@ -209,7 +242,7 @@ export function initPet({ sfx, toast }) {
       st = null; render();
       st = await load(); render();
       clearInterval(poll);
-      poll = setInterval(async () => { if (mode || busy || document.hidden) return; st = await load(); render(); }, 20000);
+      poll = setInterval(async () => { if (mode || busy || choosing || document.hidden) return; st = await load(); render(); }, 20000);
     },
     close() { clearInterval(poll); mode = null; cleanup(); cancelAnimationFrame(raf); },
   };
