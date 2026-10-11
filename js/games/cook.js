@@ -56,7 +56,7 @@ export function startCook(stage, p, api) {
   const ctx = canvas.getContext('2d');
   const pad = document.createElement('div');
   pad.className = 'fight-pad pw-pad';
-  pad.innerHTML = `<div class="pw-stick"><span></span></div><div class="fp-act"><button data-k="chop" class="ck-chop" aria-label="Potong">🔪</button><button data-k="use" class="ck-use" aria-label="Ambil / taruh">✋</button></div>`;
+  pad.innerHTML = `<div class="pw-stick"><span></span></div><div class="fp-act"><button data-k="chop" data-label="Potong" class="ck-chop" aria-label="Potong">🔪</button><button data-k="use" data-label="Ambil/Taruh" class="ck-use" aria-label="Ambil / taruh">✋</button></div>`;
   wrap.appendChild(pad);
   const knob = pad.querySelector('.pw-stick span');
 

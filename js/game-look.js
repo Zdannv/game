@@ -1,5 +1,6 @@
 // Tampilan kartu game di menu (Pilih game & Main Berdua): warna khas tiap game, ikon 3D besar, label singkat.
 export const GAME_COLOR = {
+  bomb: '#ff4d4d', coop: '#3fa9f5',
   race: '#ff7a45', fight: '#ff4f8b', penalty: '#22b573', pillow: '#9b7bff', cook: '#ff9f1c',
   fly: '#3fa9f5', runner: '#ff8f3f', stack: '#ec5fa6', catch: '#ff5c8a', timing: '#f2456b', simon: '#6c74ff',
   memory: '#2fb3e6', pop: '#f0a500', puzzle: '#2fb36f', odd: '#14b3a3', throw: '#ff6f91', maze: '#a66bff', quiz: '#ff70b8',
@@ -7,6 +8,7 @@ export const GAME_COLOR = {
   catchco: '#ff5c8a', stackco: '#ec5fa6', throwco: '#ff6f91', pictio: '#ff8f3f', draw: '#14b3a3', talk: '#9b7bff',
 };
 export const GAME_SUB = {
+  bomb: 'Ala Bomberman', coop: 'Api & air, kerja sama',
   race: 'Balapan motor', fight: 'Duel gelut', penalty: 'Tendang & jaga gawang', pillow: 'Lempar-lemparan bantal', cook: 'Masak ala Overcooked',
   fly: 'Tap buat terbang', runner: 'Lompatin rintangan', stack: 'Susun setinggi-tingginya', catch: 'Tangkap yang jatuh', timing: 'Tap pas di zona',
   simon: 'Ingat urutannya', memory: 'Cari kartu kembar', pop: 'Tap secepatnya', puzzle: 'Susun foto kalian', odd: 'Cari yang beda',

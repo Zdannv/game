@@ -29,7 +29,7 @@ export function startPillow(stage, p, api) {
   const ctx = canvas.getContext('2d');
   const pad = document.createElement('div');
   pad.className = 'fight-pad pw-pad';
-  pad.innerHTML = `<div class="pw-stick"><span></span></div><div class="fp-act"><button data-k="dash" aria-label="Hindar">💨</button><button data-k="throw" class="pw-throw" aria-label="Lempar">🛏️</button></div>`;
+  pad.innerHTML = `<div class="pw-stick"><span></span></div><div class="fp-act"><button data-k="dash" data-label="Hindar" aria-label="Hindar">💨</button><button data-k="throw" data-label="Lempar" class="pw-throw" aria-label="Lempar">🛏️</button></div>`;
   wrap.appendChild(pad);
   const knob = pad.querySelector('.pw-stick span');
 

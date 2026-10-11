@@ -177,7 +177,7 @@ function render() {
   }
   $('#ol-map').innerHTML = tabs + body;
 
-  const MODE = { race: '⚔️ Duel', fight: '⚔️ Duel', penalty: '⚔️ Duel', pillow: '⚔️ Duel', fly: '⚔️ Duel', cook: '🤝 Bareng', puzzle: '🤝 Bareng', memory: '🎲 Gantian', tebak: '💞 Kenalan', pictio: '🎨 Tebak', draw: '🎨 Gambar', talk: '💬 Ngobrol' };
+  const MODE = { bomb: '⚔️ Duel', coop: '🤝 Bareng', race: '⚔️ Duel', fight: '⚔️ Duel', penalty: '⚔️ Duel', pillow: '⚔️ Duel', fly: '⚔️ Duel', cook: '🤝 Bareng', puzzle: '🤝 Bareng', memory: '🎲 Gantian', tebak: '💞 Kenalan', pictio: '🎨 Tebak', draw: '🎨 Gambar', talk: '💬 Ngobrol' };
   $('#ol-games').innerHTML = olTab !== 'free' ? '' : gameHead('🎲 Main bebas', 'Tanpa level, langsung main') + '<div class="gt-grid">' + Object.entries(ONLINE_GAMES).map(([id, g]) => gameTile({ id, attr: `data-game="${id}"`, icon: g.icon, name: esc(g.name), tag: MODE[id] || '' })).join('') + '</div>';
 }
 

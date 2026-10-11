@@ -32,7 +32,7 @@ export function startFight(stage, p, api) {
   const pad = document.createElement('div');
   pad.className = 'fight-pad';
   pad.innerHTML = `<div class="fp-move"><button data-k="left" aria-label="Kiri">◀</button><button data-k="right" aria-label="Kanan">▶</button></div>
-    <div class="fp-act"><button data-k="block" aria-label="Tangkis">🛡️</button><button data-k="kick" aria-label="Tendang">🦶</button><button data-k="punch" aria-label="Pukul">👊</button><button data-k="special" class="sp" aria-label="Jurus">💖</button></div>`;
+    <div class="fp-act"><button data-k="block" data-label="Tangkis" aria-label="Tangkis">🛡️</button><button data-k="kick" data-label="Tendang" aria-label="Tendang">🦶</button><button data-k="punch" data-label="Pukul" aria-label="Pukul">👊</button><button data-k="special" data-label="Jurus" class="sp" aria-label="Jurus">💖</button></div>`;
   wrap.appendChild(pad);
 
   let W = 0, H = 0, k = 1;
