@@ -1,15 +1,16 @@
 // Service worker: bikin game bisa dipasang ke home screen, bisa dimainin offline,
 // dan menampilkan notifikasi streak.
-const CACHE = 'love-quest-v25';
+const CACHE = 'love-quest-v29';
 const FONT_CACHE = 'love-quest-fonts';
+const FX_CACHE = 'lq-fx-v1'; // ikon 3D (img/fx): nggak ikut kehapus tiap update
 
 // Semua file game disimpan dari awal, biar bisa dibuka offline walaupun belum pernah dimainin.
 // (Kalau nambah file baru, tambahin juga di sini.)
 const PRECACHE = [
   '/', '/index.html', '/manifest.webmanifest', '/css/style.css',
-  '/js/main.js', '/js/config.js', '/js/audio.js', '/js/confetti.js', '/js/util.js', '/js/streak.js', '/js/kita.js', '/js/couple.js', '/js/talk.js', '/js/talk-cards.js', '/js/online.js', '/js/online-games.js', '/js/duo-levels.js', '/js/couple-questions.js', '/js/draw.js',
+  '/js/main.js', '/js/config.js', '/js/audio.js', '/js/confetti.js', '/js/util.js', '/js/fx.js', '/js/game-look.js', '/js/toon.js', '/js/streak.js', '/js/kita.js', '/js/couple.js', '/js/talk.js', '/js/talk-cards.js', '/js/online.js', '/js/online-games.js', '/js/duo-levels.js', '/js/couple-questions.js', '/js/draw.js',
   '/js/games/memory.js', '/js/games/catch.js', '/js/games/pop.js', '/js/games/quiz.js', '/js/games/puzzle.js',
-  '/js/games/odd.js', '/js/games/simon.js', '/js/games/fly.js', '/js/games/race.js', '/js/games/fight.js', '/js/games/stack.js', '/js/games/runner.js',
+  '/js/games/odd.js', '/js/games/simon.js', '/js/games/fly.js', '/js/games/race.js', '/js/games/fight.js', '/js/games/penalty.js', '/js/games/pillow.js', '/js/games/cook.js', '/js/games/stack.js', '/js/games/runner.js',
   '/js/games/throw.js', '/js/games/maze.js', '/js/games/timing.js',
   '/img/fall-kecil.jpg', '/img/aidan-kecil.jpg', '/img/aidan-kecil-2.jpg', '/img/berdua.jpg',
   '/img/fall-head.jpg', '/img/aidan-head.jpg', '/semangat/',
@@ -28,7 +29,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== FONT_CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== FONT_CACHE && k !== FX_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -46,6 +47,11 @@ self.addEventListener('fetch', (e) => {
         return res;
       }))),
     );
+    return;
+  }
+
+  if (url.origin === location.origin && url.pathname.startsWith('/img/fx/')) {
+    e.respondWith(caches.open(FX_CACHE).then((c) => c.match(req).then((hit) => hit || fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; }))));
     return;
   }
 
