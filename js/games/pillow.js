@@ -51,8 +51,8 @@ export function startPillow(stage, p, api) {
   const me = player(AW / 2, AH - 120, loadImage(p.face), p.emoji || '😊', p.name || 'Kamu', '#ff8fb7');
   const opp = player(AW / 2, 120, loadImage(p.oppFace), p.oppEmoji || '😈', p.oppName || 'Lawan', '#9fb4ff');
   let pillows = [], feathers = [], floats = [];
-  let time = ROUND, state = p.endless ? 'intro' : 'fight', stateT = 0, done = false, raf = 0, last = performance.now(), lastStats = '', lastSent = 0;
-  let wins = 0, level = 0, roundResult = null, seq = 0;
+  let time = ROUND, state = p.endless || !duel ? 'intro' : 'fight', stateT = 0, done = false, raf = 0, last = performance.now(), lastStats = '', lastSent = 0;
+  let wins = 0, level = p.botLevel || 0, roundResult = null, seq = 0;
   const stick = { x: 0, y: 0, id: null };
   const bot = { t: 0, gx: AW / 2, gy: 200, fire: 1.2 };
   const offs = [];
@@ -280,6 +280,7 @@ export function startPillow(stage, p, api) {
     done = true;
     if (p.endless) { api.finish({ win: true, score: wins, detail: `Menang ${wins} ronde beruntun 🛏️` }); return; }
     const { won, draw } = roundResult || { won: me.hp > opp.hp, draw: me.hp === opp.hp };
+    if (!duel) { api.finish({ win: won, stars: won ? (me.hp >= 4 ? 3 : me.hp >= 2 ? 2 : 1) : 0, detail: won ? `Menang perang bantal, sisa nyawa ${me.hp} 🛏️` : `${opp.name} lebih lincah, coba lagi! 🪶` }); return; }
     api.finish({ win: won, draw, myHp: me.hp, oppHp: opp.hp });
   }
 

@@ -52,7 +52,7 @@ export function startFight(stage, p, api) {
   const me = fighter(leftSide ? 250 : 750, leftSide ? 1 : -1, loadImage(p.face), p.emoji || '😊', p.name || 'Kamu', p.toon || 'f');
   const opp = fighter(leftSide ? 750 : 250, leftSide ? -1 : 1, loadImage(p.oppFace), p.oppEmoji || '😈', p.oppName || 'Lawan', p.oppToon || 'm');
   toonLoad(me.toon, opp.toon);
-  let level = 0, wins = 0;
+  let level = p.botLevel || 0, wins = 0;
   let projs = [], sparks = [], floats = [];
   let time = ROUND_TIME, state = 'fight', stateT = 0, done = false, raf = 0, last = performance.now(), lastStats = '', lastSent = 0;
   const hold = { left: false, right: false, block: false };
@@ -331,7 +331,7 @@ export function startFight(stage, p, api) {
     if (!done) update(dt);
     draw();
   }
-  if (p.endless) { state = 'intro'; stateT = 0; }
+  if (p.endless || !duel) { state = 'intro'; stateT = 0; }
   raf = requestAnimationFrame(loop);
   api.say('◀ ▶ jalan · 👊 pukul · 🦶 tendang · 🛡️ tahan buat nangkis · 💖 jurus kalau bar kuning penuh', 'happy');
 
@@ -340,6 +340,7 @@ export function startFight(stage, p, api) {
     done = true;
     if (p.endless) { api.finish({ win: true, score: wins, detail: `Menang ${wins} ronde beruntun 💪` }); return; }
     const { won, draw } = roundResult || { won: me.hp > opp.hp, draw: me.hp === opp.hp };
+    if (!duel) { api.finish({ win: won, stars: won ? (me.hp > 70 ? 3 : me.hp > 35 ? 2 : 1) : 0, detail: won ? `Menang dengan sisa darah ${me.hp} 💪` : `${opp.name} masih kuat, coba lagi! 😤` }); return; }
     api.finish({ win: won, draw, myHp: me.hp, oppHp: opp.hp });
   }
 
