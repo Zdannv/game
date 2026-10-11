@@ -7,6 +7,8 @@ import { startPop } from './games/pop.js';
 import { startCatch } from './games/catch.js';
 import { startStack } from './games/stack.js';
 import { startThrow } from './games/throw.js';
+import { startRace } from './games/race.js';
+import { startFight } from './games/fight.js';
 import { TEBAK as TEBAK_Q, SAMAAN as SAMAAN_Q, markQuestions } from './couple-questions.js';
 import { esc } from './util.js';
 
@@ -647,7 +649,63 @@ export const LEVEL_GAMES = {
   throwco: { start: startSumCoop, countdown: true },
 };
 
+// ---------- Ngebut Pulang berdua: jalan & lalu lintas sama, yang duluan nyampe finish menang ----------
+const RACE_FINISH = 2000;
+function startRaceDuo(stage, api, ctx) {
+  let peerState = { z: 0, x: 0, done: false, tm: 0 };
+  let mine = null, lastSent = 0, shown = false;
+  const offs = [ctx.on('race', (d) => { peerState = d; check(); })];
+  function check() {
+    if (shown || !mine || !peerState.done) return;
+    shown = true;
+    const a = mine.time, b = peerState.tm;
+    const win = a <= b, gap = Math.abs(a - b).toFixed(1);
+    api.finish({
+      win, icon: win ? '🏆' : '🥈',
+      title: win ? 'Kamu nyampe duluan!' : `${ctx.peer.name} nyampe duluan!`,
+      detail: `Kamu ${a.toFixed(1)} dtk · ${ctx.peer.name} ${b.toFixed(1)} dtk (selisih ${gap} dtk)`,
+    });
+  }
+  const game = startRace(stage, {
+    finish: RACE_FINISH, rng: seeded(ctx.seed), face: ctx.me.face, rider: ctx.me.emoji, signFace: ctx.peer.face, signName: ctx.peer.name,
+    race: {
+      name: ctx.peer.name, face: ctx.peer.face, emoji: ctx.peer.emoji,
+      ghost: () => peerState,
+      tick(state, force) {
+        const now = performance.now();
+        if (!force && now - lastSent < 100) return;
+        lastSent = now;
+        ctx.send('race', state);
+      },
+    },
+  }, {
+    ...api,
+    finish: (r) => { mine = r; api.say(peerState.done ? 'Yuk liat hasilnya!' : `Nyampe! Nunggu ${ctx.peer.name} 👀`, 'happy'); check(); },
+  });
+  return { destroy() { offs.forEach((f) => f()); game.destroy(); } };
+}
+
+// ---------- Gelut Sayang berdua: duel langsung dari HP masing-masing ----------
+function startFightDuo(stage, api, ctx) {
+  const game = startFight(stage, {
+    face: ctx.me.face, emoji: ctx.me.emoji, name: ctx.me.name,
+    oppFace: ctx.peer.face, oppEmoji: ctx.peer.emoji, oppName: ctx.peer.name,
+    duel: { left: ctx.me.role === 'pasangan', send: ctx.send, on: ctx.on },
+  }, {
+    ...api,
+    finish: (r) => api.finish({
+      win: r.win,
+      icon: r.draw ? '🤝' : r.win ? '🏆' : '😵',
+      title: r.draw ? 'Seri, sama kuatnya!' : r.win ? 'Kamu menang!' : `${ctx.peer.name} menang!`,
+      detail: `Darah kamu ${r.myHp} · ${ctx.peer.name} ${r.oppHp}`,
+    }),
+  });
+  return game;
+}
+
 export const ONLINE_GAMES = {
+  race: { name: 'Ngebut Pulang', icon: '🏍️', desc: 'Balapan motor, siapa yang duluan nyampe finish', start: startRaceDuo, countdown: true },
+  fight: { name: 'Gelut Sayang', icon: '🥊', desc: 'Duel langsung, muka kalian jadi petarungnya', start: startFightDuo, countdown: true },
   fly: { name: 'Terbang Balapan', icon: '🕊️', desc: 'Siapa yang paling jauh terbangnya', start: startFlyRace, countdown: true },
   tebak: { name: 'Tebak Pasangan', icon: '💞', desc: 'Seberapa kenal kamu sama dia?', start: startTebak },
   puzzle: { name: 'Puzzle Bareng', icon: '🧩', desc: 'Susun foto kalian berdua-duaan', start: startPuzzleTogether },

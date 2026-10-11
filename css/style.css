@@ -846,3 +846,16 @@ body.exam #screen-game[data-theme="w-flower"] { background: linear-gradient(180d
 .draw-btns .btn.on { background: #ff4f8b; color: #fff; border-color: #ff4f8b; }
 .pg-opts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
 .pg-opts .btn { margin-top: 0; }
+
+/* Gelut Sayang */
+.fight-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.fight-view { position: relative; flex: 1; min-height: 0; }
+.fight-pad { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px max(10px, env(safe-area-inset-bottom)); user-select: none; -webkit-user-select: none; touch-action: none; }
+.fight-pad > div { display: flex; gap: 8px; }
+.fight-pad button { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #fff; background: rgba(255,255,255,.9); font-size: 26px; box-shadow: 0 4px 0 rgba(160,60,120,.25); touch-action: none; -webkit-tap-highlight-color: transparent; padding: 0; }
+.fight-pad .fp-act button { width: 54px; height: 54px; font-size: 24px; }
+.fight-pad button.on { transform: translateY(3px) scale(.94); box-shadow: 0 1px 0 rgba(160,60,120,.25); background: #ffe1ee; }
+.fight-pad .sp { opacity: .45; }
+.fight-pad .sp.ready { opacity: 1; background: #ffe58a; animation: spReady .8s ease-in-out infinite alternate; }
+@keyframes spReady { to { box-shadow: 0 0 0 6px rgba(255,176,32,.35), 0 4px 0 rgba(160,60,120,.25); } }
+@media (max-width: 360px) { .fight-pad button { width: 52px; height: 52px; font-size: 22px; } .fight-pad .fp-act button { width: 46px; height: 46px; font-size: 20px; } .fight-pad > div { gap: 5px; } }
