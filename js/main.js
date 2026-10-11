@@ -1,4 +1,6 @@
 import { CONFIG } from './config.js';
+import { fxWatch } from './fx.js';
+import { gameTile, gameHead } from './game-look.js';
 import { sfx, toggleMute, isMuted, toggleMusic, isMusicOff } from './audio.js';
 import { confetti } from './confetti.js';
 import { esc, pick } from './util.js';
@@ -23,7 +25,11 @@ import { startMaze } from './games/maze.js';
 import { startTiming } from './games/timing.js';
 import { startRace } from './games/race.js';
 import { startFight } from './games/fight.js';
+import { startPenalty } from './games/penalty.js';
+import { startPillow } from './games/pillow.js';
+import { startCook } from './games/cook.js';
 import { streakEnabled, getPlayer, setPlayer, recordPlay, flushPlays, pendingPlays, loadStreak, notifyPlayed, pushState, enablePush, setBadge } from './streak.js';
+fxWatch(); // emoji di halaman → ikon 3D
 
 // ---------- Dunia & level ----------
 const OWL_CAT = ['🦉', '🐱'];
@@ -123,17 +129,17 @@ const TYPE_NAME = {
   memory: 'Kartu Kembar', catch: 'Tangkap Cinta', pop: 'Tap si Imut', quiz: 'Kuis Sayang',
   puzzle: 'Puzzle Foto', odd: 'Cari yang Beda', simon: 'Ingat Urutan', fly: 'Terbang Tinggi',
   stack: 'Susun Kue', runner: 'Lari Lompat', throw: 'Lempar Hati', maze: 'Labirin Cinta', timing: 'Panah Cinta',
-  race: 'Ngebut Pulang', fight: 'Gelut Sayang',
+  race: 'Ngebut Pulang', fight: 'Gelut Sayang', penalty: 'Adu Penalti', pillow: 'Perang Bantal', cook: 'Masak Bareng',
 };
 const TYPE_ICON = {
   memory: '🃏', catch: '🧺', pop: '👆', quiz: '💌', puzzle: '🧩', odd: '🔍', simon: '🎵', fly: '🦉',
-  stack: '🎂', runner: '🏃', throw: '🎯', maze: '🧭', timing: '💘', race: '🏍️', fight: '🥊',
+  stack: '🎂', runner: '🏃', throw: '🎯', maze: '🧭', timing: '💘', race: '🏍️', fight: '🥊', penalty: '⚽', pillow: '🛏️', cook: '🧑‍🍳',
 };
 const STARTERS = {
   memory: startMemory, catch: startCatch, pop: startPop, quiz: startQuiz,
   puzzle: startPuzzle, odd: startOdd, simon: startSimon, fly: startFly,
   stack: startStack, runner: startRunner, throw: startThrow, maze: startMaze, timing: startTiming,
-  race: startRace, fight: startFight,
+  race: startRace, fight: startFight, penalty: startPenalty, pillow: startPillow, cook: startCook,
 };
 const NO_COUNTDOWN = ['quiz', 'puzzle'];
 const LETTER_LEVEL = 'w3-5'; // kuis terakhir dunia 4 → buka surat
@@ -198,6 +204,9 @@ const MAIN = LEVELS.filter((L) => !L.bonus);
 function hintFor(L) {
   const p = L.params;
   if (L.endless && L.type === 'race') return `Tahan & geser jari buat nyetir, salip mobil mepet buat bonus! 3 nyawa. Rekor kamu: ${p.best || 0} poin 🏆`;
+  if (L.endless && L.type === 'penalty') return `Gantian nendang & jaga gawang lawan bot! Gol / tepisan = +1, gagal = -1 nyawa. Rekor kamu: ${p.best || 0} 🏆`;
+  if (L.endless && L.type === 'pillow') return `Lempar bantal ke lawan, hindarin bantalnya, sembunyi di balik kasur! Rekor kamu: ${p.best || 0} menang 🏆`;
+  if (L.endless && L.type === 'cook') return `Masak sesuai pesanan sebelum pelanggannya kabur! 3 kabur = selesai. Rekor kamu: ${p.best || 0} pesanan 🏆`;
   if (L.endless && L.type === 'fight') return `Kalahin lawan sebanyak-banyaknya, tiap ronde lawannya makin jago! Rekor kamu: ${p.best || 0} menang 🏆`;
   if (L.endless) return `Main terus sampai nyawa habis, makin lama makin susah! Rekor kamu: ${p.best || 0} ${SCORE_UNIT[L.type]} 🏆`;
   switch (L.type) {
@@ -219,7 +228,7 @@ function hintFor(L) {
 const levelLabel = (L) => (L.bonus ? 'Bonus ⭐' : `Level ${L.num}`);
 
 // ---------- Main Sendiri: Pilih game (tiap jenis game punya level sendiri, makin susah) ----------
-const SOLO_TYPES = ['race', 'fight', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon', 'memory', 'pop', 'puzzle', 'odd', 'throw', 'maze', 'quiz'];
+const SOLO_TYPES = ['race', 'fight', 'penalty', 'pillow', 'cook', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon', 'memory', 'pop', 'puzzle', 'odd', 'throw', 'maze', 'quiz'];
 const trackLen = (t) => (t === 'quiz' ? Math.min(5, CONFIG.quiz.length) : 10);
 const worldParams = (wi, type) => [wi, wi - 1, wi + 1, wi - 2, 0].map((x) => LEVELS.find((L) => L.world === x && L.type === type && !L.bonus)?.params).find(Boolean);
 // k = level 0..9 → setelan game (dipakai juga buat Main Berdua yang skornya dijumlah)
@@ -242,13 +251,13 @@ function trackParams(type, k) {
     case 'throw': { const b = G.throw(wi); return { ...b, speed: b.speed + odd * 12 }; }
     case 'maze': { const b = G.maze(wi); return { ...b, time: b.time - odd * 5 }; }
     case 'timing': { const b = G.timing(wi); return { ...b, speed: +(b.speed + odd * 0.08).toFixed(2) }; }
-    case 'race': case 'fight': {
+    case 'race': case 'fight': case 'penalty': case 'pillow': case 'cook': {
       // Yang main = yang lagi login di HP ini; pasangannya jadi papan iklan (balapan) / lawan (gelut)
       const meA = getPlayer() === 'aidan';
       const [mf, of, mn, on] = meA ? [FACE.aidan, FACE.fall, 'Aidan', 'Fall'] : [FACE.fall, FACE.aidan, 'Fall', 'Aidan'];
       return type === 'race'
         ? { type, lives: 3, face: mf, signFace: of, signName: on, rider: meA ? '🐱' : '🐹' }
-        : { type, face: mf, oppFace: of, name: mn, oppName: on, emoji: meA ? '🐱' : '🐹', oppEmoji: meA ? '🐹' : '🐱' };
+        : { type, face: mf, oppFace: of, name: mn, oppName: on, emoji: meA ? '🐱' : '🐹', oppEmoji: meA ? '🐹' : '🐱', toon: meA ? 'm' : 'f', oppToon: meA ? 'f' : 'm' };
     }
     default: return {};
   }
@@ -258,7 +267,7 @@ function soloTrack(type, k) {
   return { id: `s-${type}-${k}`, track: type, k, num: k + 1, type, world: Math.min(4, Math.floor(k / 2)), params: trackParams(type, k) };
 }
 // Mode skor: game yang bisa dimainin terus → nggak ada level, main sampai nyawa habis, simpan rekor
-const ENDLESS = ['race', 'fight', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon'];
+const ENDLESS = ['race', 'fight', 'penalty', 'pillow', 'cook', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon'];
 const BEST_KEY = 'fq-best';
 const bestScores = () => { try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}'); } catch { return {}; } };
 function saveBest(type, score) {
@@ -268,7 +277,7 @@ function saveBest(type, score) {
   try { localStorage.setItem(BEST_KEY, JSON.stringify(all)); } catch {}
   return true;
 }
-const SCORE_UNIT = { race: 'poin', fight: 'menang', fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan' };
+const SCORE_UNIT = { race: 'poin', fight: 'menang', penalty: 'poin', pillow: 'menang', cook: 'pesanan', fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan' };
 function endlessLevel(type) {
   const base = trackParams(type, 1);
   const inf = Number.POSITIVE_INFINITY;
@@ -477,25 +486,14 @@ function renderTracks() {
   }
   let all = 0;
   const card = (t) => {
-    if (ENDLESS.includes(t)) {
-      return `<button type="button" class="ol-game" data-endless="${t}">
-        <span class="ol-game-icon">${TYPE_ICON[t]}</span>
-        <span><b>${TYPE_NAME[t]}</b><small>Mode skor · ${t === 'fight' ? 'lawan makin jago tiap ronde' : t === 'race' ? 'ngebut & salip mobil, 3 nyawa' : 'main terus sampai nyawa habis'}</small></span>
-        <span class="track-prog">🏆 ${bestScores()[t] || 0}<small>rekor</small></span>
-      </button>`;
-    }
+    if (ENDLESS.includes(t)) return gameTile({ id: t, attr: `data-endless="${t}"`, icon: TYPE_ICON[t], name: TYPE_NAME[t], tag: `🏆 ${bestScores()[t] || 0}` });
     const n = trackLen(t);
     const got = [...Array(n)].reduce((a, _, k) => a + st(`s-${t}-${k}`), 0);
-    const done = [...Array(n)].filter((_, k) => st(`s-${t}-${k}`)).length;
     all += got;
-    return `<button type="button" class="ol-game" data-solo-track="${t}">
-      <span class="ol-game-icon">${TYPE_ICON[t]}</span>
-      <span><b>${TYPE_NAME[t]}</b><small>${n} level</small></span>
-      <span class="track-prog">${done}/${n}<small>⭐ ${got}</small></span>
-    </button>`;
+    return gameTile({ id: t, attr: `data-solo-track="${t}"`, icon: TYPE_ICON[t], name: TYPE_NAME[t], tag: `⭐ ${got}/${n * 3}` });
   };
-  worldsEl.innerHTML = `<p class="ol-section">🏆 Mode skor: main terus, kejar rekor</p><div class="track-list">${SOLO_TYPES.filter((t) => ENDLESS.includes(t)).map(card).join('')}</div>`
-    + `<p class="ol-section" style="margin-top:18px">⭐ Pakai level: makin tinggi makin susah</p><div class="track-list">${SOLO_TYPES.filter((t) => !ENDLESS.includes(t)).map(card).join('')}</div>`;
+  worldsEl.innerHTML = gameHead('🏆 Mode skor', 'Main terus, kejar rekor tertinggi') + `<div class="gt-grid">${SOLO_TYPES.filter((t) => ENDLESS.includes(t)).map(card).join('')}</div>`
+    + gameHead('⭐ Pakai level', 'Tiap game 10 level, makin tinggi makin susah') + `<div class="gt-grid">${SOLO_TYPES.filter((t) => !ENDLESS.includes(t)).map(card).join('')}</div>`;
   $('#star-count').textContent = `${all}`;
 }
 $('#solo-tabs').addEventListener('click', (e) => {

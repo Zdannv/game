@@ -4,6 +4,7 @@
 // Berdua (p.duel): tiap HP ngatur petarungnya sendiri; serangan yang kena dikirim ke HP lawan,
 // HP lawan yang ngitung darahnya sendiri (biar tangkisan tetap kehitung).
 import { drawEmoji, drawFace, loadImage } from '../util.js';
+import { drawToon, toonLoad } from '../toon.js';
 
 const ARENA = 1000, FLOOR = 0.8;
 const MOVES = {
@@ -13,8 +14,8 @@ const MOVES = {
 };
 const WALK = 300, ROUND_TIME = 60, MIN_GAP = 205;
 
-function fighter(x, dir, img, emoji, name, color) {
-  return { x, dir, hp: 100, meter: 0, act: 'idle', t: 0, hitDone: false, kbV: 0, img, emoji, name, color, walk: 0 };
+function fighter(x, dir, img, emoji, name, toon) {
+  return { x, dir, hp: 100, meter: 0, act: 'idle', t: 0, hitDone: false, kbV: 0, img, emoji, name, toon, walk: 0 };
 }
 
 export function startFight(stage, p, api) {
@@ -48,8 +49,9 @@ export function startFight(stage, p, api) {
 
   const duel = p.duel || null;
   const leftSide = duel ? duel.left : true;
-  const me = fighter(leftSide ? 250 : 750, leftSide ? 1 : -1, loadImage(p.face), p.emoji || '😊', p.name || 'Kamu', '#3b1f4f');
-  const opp = fighter(leftSide ? 750 : 250, leftSide ? -1 : 1, loadImage(p.oppFace), p.oppEmoji || '😈', p.oppName || 'Lawan', '#1f2b4a');
+  const me = fighter(leftSide ? 250 : 750, leftSide ? 1 : -1, loadImage(p.face), p.emoji || '😊', p.name || 'Kamu', p.toon || 'f');
+  const opp = fighter(leftSide ? 750 : 250, leftSide ? -1 : 1, loadImage(p.oppFace), p.oppEmoji || '😈', p.oppName || 'Lawan', p.oppToon || 'm');
+  toonLoad(me.toon, opp.toon);
   let level = 0, wins = 0;
   let projs = [], sparks = [], floats = [];
   let time = ROUND_TIME, state = 'fight', stateT = 0, done = false, raf = 0, last = performance.now(), lastStats = '', lastSent = 0;
@@ -241,51 +243,32 @@ export function startFight(stage, p, api) {
   }
 
   // ---- Gambar ----
-  function limb(x1, y1, x2, y2, w) { ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+  function poseOf(f) {
+    const mv = MOVES[f.act], ph = mv ? f.t / mv.start : 0;
+    switch (f.act) {
+      case 'walk': return `walk${Math.floor(f.walk) % 8}`;
+      case 'punch': return ph < 1 ? 'attack1' : 'attack0';
+      case 'kick': return ph < 1 ? 'attackKick' : 'kick';
+      case 'block': return 'duck';
+      case 'hurt': return 'hurt';
+      case 'special': return 'shove';
+      case 'win': return Math.floor(f.t * 3) % 2 ? 'cheer1' : 'cheer0';
+      case 'ko': return 'slide';
+      default: return 'idle';
+    }
+  }
   function drawFighter(f) {
-    const s = 1.32 * k; // skala badan
-    const fx = SX(f.x), fy = H * FLOOR;
-    ctx.save();
-    ctx.translate(fx, fy);
-    ctx.scale(f.dir, 1);
-    // bayangan
-    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(0, 2, 40 * s, 9 * s, 0, 0, Math.PI * 2); ctx.fill();
-    if (f.act === 'ko') { ctx.rotate(-Math.PI / 2 * Math.min(1, f.t * 3)); ctx.translate(-10 * s, 0); }
-    const bob = f.act === 'idle' ? Math.sin(performance.now() / 260) * 2.5 * s : 0;
-    const mv = MOVES[f.act];
-    const ph = mv ? Math.min(1, f.t / mv.start) : 0; // 0 → ancang-ancang, 1 → kena
-    const back = f.act === 'kick' ? -10 * s * ph : f.act === 'hurt' ? -14 * s : 0;
-    const hip = { x: back * 0.4, y: -70 * s + bob }, neck = { x: back + 6 * s, y: -128 * s + bob };
-    ctx.strokeStyle = f.color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    // kaki
-    const sw = Math.sin(f.walk) * 16 * s;
-    let fl = { x: 22 * s + sw, y: 0 }, bl = { x: -18 * s - sw, y: 0 };
-    if (f.act === 'kick') fl = { x: 20 * s + 82 * s * ph, y: -58 * s * ph };
-    if (f.act === 'win') { fl = { x: 18 * s, y: 0 }; bl = { x: -18 * s, y: 0 }; }
-    const knee = (a) => ({ x: (hip.x + a.x) / 2 + 8 * s, y: (hip.y + a.y) / 2 - (a.y < -10 ? 0 : 6 * s) });
-    for (const ft of [bl, fl]) { const kn = knee(ft); limb(hip.x, hip.y, kn.x, kn.y, 15 * s); limb(kn.x, kn.y, ft.x, ft.y, 13 * s); }
-    // badan
-    limb(hip.x, hip.y, neck.x, neck.y, 26 * s);
-    // tangan
-    const sh = { x: neck.x, y: neck.y + 10 * s };
-    let fh = { x: sh.x + 26 * s, y: sh.y + 30 * s }, bh = { x: sh.x + 16 * s, y: sh.y + 22 * s };
-    if (f.act === 'punch') fh = { x: sh.x + (26 + 62 * ph) * s, y: sh.y + (16 - 8 * ph) * s };
-    if (f.act === 'block') { fh = { x: sh.x + 30 * s, y: sh.y - 16 * s }; bh = { x: sh.x + 26 * s, y: sh.y - 4 * s }; }
-    if (f.act === 'special') fh = { x: sh.x + 70 * s * ph, y: sh.y - 6 * s };
-    if (f.act === 'win') { fh = { x: sh.x + 12 * s, y: sh.y - 52 * s }; bh = { x: sh.x - 14 * s, y: sh.y - 50 * s }; }
-    if (f.act === 'hurt') { fh = { x: sh.x - 6 * s, y: sh.y + 34 * s }; bh = { x: sh.x - 20 * s, y: sh.y + 28 * s }; }
-    for (const hd of [bh, fh]) { const el = { x: (sh.x + hd.x) / 2 - 4 * s, y: (sh.y + hd.y) / 2 + 8 * s }; limb(sh.x, sh.y, el.x, el.y, 12 * s); limb(el.x, el.y, hd.x, hd.y, 11 * s); }
-    ctx.fillStyle = f.color;
-    for (const hd of [bh, fh]) { ctx.beginPath(); ctx.arc(hd.x, hd.y, 9 * s, 0, Math.PI * 2); ctx.fill(); }
-    if (f.act === 'punch' && ph >= 1) drawEmoji(ctx, '🥊', fh.x + 4 * s, fh.y, 26 * s);
-    if (f.act === 'block') drawEmoji(ctx, '🛡️', fh.x + 10 * s, fh.y + 6 * s, 30 * s);
-    // kepala = foto (nggak ikut dicerminin biar mukanya nggak kebalik)
-    ctx.translate(neck.x, neck.y - 26 * s);
-    ctx.scale(f.dir, 1);
-    drawFace(ctx, f.img, 0, 0, 30 * s, f.emoji, f === me ? '#ff8fb7' : '#9fb4ff');
-    if (f.act === 'hurt') drawEmoji(ctx, '😵', 24 * s, -24 * s, 22 * s);
-    if (f.act === 'win') drawEmoji(ctx, '👑', 0, -40 * s, 30 * s);
-    ctx.restore();
+    const fx = SX(f.x), fy = H * FLOOR, h = 205 * k;
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(fx, fy - 4 * k, 44 * k, 9 * k, 0, 0, Math.PI * 2); ctx.fill();
+    const bob = f.act === 'idle' ? Math.sin(performance.now() / 260) * 2 * k : 0;
+    if (f.act === 'hurt' && Math.floor(f.t * 20) % 2) ctx.globalAlpha = 0.6;
+    drawToon(ctx, f.toon, poseOf(f), fx, fy + bob + 8 * k, h, f.dir, f.img, f.emoji, f === me ? '#ff8fb7' : '#9fb4ff');
+    ctx.globalAlpha = 1;
+    const headY = fy - h * 0.62;
+    if (f.act === 'hurt') drawEmoji(ctx, '😵', fx + f.dir * 30 * k, headY - 40 * k, 26 * k);
+    if (f.act === 'win') drawEmoji(ctx, '👑', fx, headY - 56 * k, 34 * k);
+    if (f.act === 'block') drawEmoji(ctx, '🛡️', fx + f.dir * 46 * k, fy - h * 0.38, 40 * k);
+    if (f.act === 'punch' && f.t >= MOVES.punch.start) drawEmoji(ctx, '🥊', fx + f.dir * 78 * k, fy - h * 0.47, 30 * k);
   }
   function bar(x, y, w, h, v, color, alignRight) {
     ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(x, y, w, h);
