@@ -12,6 +12,8 @@ import { startFight } from './games/fight.js';
 import { startPenalty } from './games/penalty.js';
 import { startPillow } from './games/pillow.js';
 import { startCook } from './games/cook.js';
+import { startBomb } from './games/bomb.js';
+import { startCoop, COOP_LEVELS } from './games/coop.js';
 import { TEBAK as TEBAK_Q, SAMAAN as SAMAAN_Q, markQuestions } from './couple-questions.js';
 import { esc } from './util.js';
 
@@ -732,7 +734,29 @@ function startCookDuo(stage, api, ctx) {
   }) });
 }
 
+function startBombDuo(stage, api, ctx) {
+  return startBomb(stage, duelLook(ctx), { ...api, finish: (r) => api.finish({
+    win: r.win, icon: r.draw ? '🤝' : r.win ? '🏆' : '💥',
+    title: r.draw ? 'Seri, sama-sama kena!' : r.win ? 'Kamu menang Bom Cinta!' : `${ctx.peer.name} menang Bom Cinta!`,
+    detail: r.draw ? 'Dua-duanya kena ledakan 😆' : r.win ? `${ctx.peer.name} kena bom kamu 💣` : 'Kamu kena bom duluan 😵',
+  }) });
+}
+function startCoopDuo(stage, api, ctx) {
+  const water = ctx.me.role === 'pasangan' ? ctx.me : ctx.peer, fire = ctx.me.role === 'pasangan' ? ctx.peer : ctx.me;
+  return startCoop(stage, {
+    waterFace: water.face, waterEmoji: water.emoji, waterName: water.name, waterToon: 'f',
+    fireFace: fire.face, fireEmoji: fire.emoji, fireName: fire.name, fireToon: 'm',
+    duel: { role: ctx.me.role, send: ctx.send, on: ctx.on },
+  }, { ...api, finish: (r) => api.finish({
+    win: r.win, icon: r.levels >= COOP_LEVELS.length ? '🏠' : '💞',
+    title: r.levels >= COOP_LEVELS.length ? 'Kalian sampai rumah bareng!' : `Kalian lewatin ${r.levels} level`,
+    detail: `Jalan Pulang Berdua · ${r.levels}/${COOP_LEVELS.length} level`,
+  }) });
+}
+
 export const ONLINE_GAMES = {
+  coop: { name: 'Jalan Pulang Berdua', icon: '🏠', desc: 'Api & air kerja sama, bawa pulang dua-duanya', start: startCoopDuo, countdown: true },
+  bomb: { name: 'Bom Cinta', icon: '💣', desc: 'Taruh bom, kabur, ledakin pasanganmu!', start: startBombDuo, countdown: true },
   penalty: { name: 'Adu Penalti', icon: '⚽', desc: 'Gantian nendang & jaga gawang, 5 tendangan', start: startPenaltyDuo, countdown: true },
   pillow: { name: 'Perang Bantal', icon: '🛏️', desc: 'Saling lempar bantal, sembunyi di balik kasur', start: startPillowDuo, countdown: true },
   cook: { name: 'Masak Bareng', icon: '🧑‍🍳', desc: 'Masak bareng di satu dapur kayak Overcooked, kejar pesanan!', start: startCookDuo, countdown: true },
