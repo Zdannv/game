@@ -49,11 +49,11 @@ const FACE = { fall: 'img/fall-head.jpg', aidan: 'img/aidan-head.jpg' };
 // Parameter game baru per tingkat (wi = dunia 0–4)
 const G = {
   stack: (wi) => ({ type: 'stack', target: [6, 8, 9, 10, 10][wi], speed: 170 + wi * 25, speedUp: 6, lives: 3 }),
-  runner: (wi, obstacles) => ({ type: 'runner', time: [20, 24, 26, 28, 28][wi], speed: 230 + wi * 20, gapMin: 1.05 - wi * 0.07, gapMax: 1.8 - wi * 0.1, lives: 3, obstacles, face: FACE.aidan, emoji: '🐱' }),
+  runner: (wi, obstacles) => ({ type: 'runner', time: [20, 24, 26, 28, 28][wi], speed: 230 + wi * 20, gapMin: 1.05 - wi * 0.07, gapMax: 1.8 - wi * 0.1, lives: 3, obstacles, face: FACE.aidan, emoji: '🐱', toon: 'm' }),
   throw: (wi) => ({ type: 'throw', target: [5, 6, 7, 7, 7][wi], throws: [10, 11, 11, 11, 11][wi], speed: 120 + wi * 25, speedUp: 10, jitter: 0.2 + wi * 0.1, face: FACE.aidan, emoji: '😘' }),
   maze: (wi) => ({ type: 'maze', cols: [5, 6, 7, 7, 8][wi], rows: [7, 8, 9, 10, 11][wi], time: [45, 50, 55, 60, 60][wi], startFace: FACE.fall, endFace: FACE.aidan }),
   // Panah Cinta sengaja dibuat santai: zona nggak pernah lebih kecil dari 20% bar, jarum nambah cepat sedikit aja
-  timing: (wi) => ({ type: 'timing', target: [5, 5, 6, 6, 6][wi], lives: 3, zone: [0.3, 0.29, 0.27, 0.25, 0.24][wi], minZone: 0.2, shrink: 0.01, speed: [1.9, 2, 2.1, 2.2, 2.3][wi], speedUp: 0.05 }),
+  timing: (wi) => ({ type: 'timing', face: FACE.fall, toon: 'f', target: [5, 5, 6, 6, 6][wi], lives: 3, zone: [0.3, 0.29, 0.27, 0.25, 0.24][wi], minZone: 0.2, shrink: 0.01, speed: [1.9, 2, 2.1, 2.2, 2.3][wi], speedUp: 0.05 }),
   simon: (target, speed) => ({ type: 'simon', target, speed, lives: 3 }),
   fly: (target, gap, speed, spacing) => ({ type: 'fly', target, gap, speed, spacing, lives: 3, face: FACE.fall }),
   odd: (rounds, maxSize, time) => ({ type: 'odd', rounds, maxSize, time }),
@@ -288,6 +288,7 @@ function saveBest(type, score) {
   return true;
 }
 const SCORE_UNIT = { bomb: 'menang', race: 'poin', fight: 'menang', penalty: 'poin', pillow: 'menang', cook: 'pesanan', fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan' };
+if (window.__lqTest) window.__startType = (type, k = 2) => startLevel({ id: `t-${type}`, track: type, k, num: k + 1, type, world: 1, params: trackParams(type, k) });
 function endlessLevel(type) {
   const base = trackParams(type, 1);
   const inf = Number.POSITIVE_INFINITY;
