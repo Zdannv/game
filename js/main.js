@@ -1,6 +1,7 @@
 import { setPaused } from './pause.js';
 import { CONFIG } from './config.js';
 import { fxWatch } from './fx.js';
+import { setupNav } from './nav.js';
 import { gameTile, gameHead } from './game-look.js';
 import { sfx, toggleMute, isMuted, toggleMusic, isMusicOff } from './audio.js';
 import { confetti } from './confetti.js';
@@ -57,6 +58,14 @@ const G = {
   simon: (target, speed) => ({ type: 'simon', target, speed, lives: 3 }),
   fly: (target, gap, speed, spacing) => ({ type: 'fly', target, gap, speed, spacing, lives: 3, face: FACE.fall }),
   odd: (rounds, maxSize, time) => ({ type: 'odd', rounds, maxSize, time }),
+  // Game seru yang baru (versi level): makin ke dunia belakang makin susah
+  race: (wi) => ({ type: 'race', goal: [500, 700, 900, 1100, 1300][wi], lives: 3 }),
+  fight: (wi) => ({ type: 'fight', botLevel: wi }),
+  penalty: (wi) => ({ type: 'penalty', goal: [5, 5, 6, 6, 7][wi], botLevel: wi }),
+  pillow: (wi) => ({ type: 'pillow', botLevel: wi }),
+  cook: (wi) => ({ type: 'cook', goal: [3, 4, 4, 5, 6][wi] }),
+  bomb: (wi) => ({ type: 'bomb', bots: [1, 2, 2, 3, 3][wi], botLevel: wi }),
+  coop: (n) => ({ type: 'coop', level: n }),
 };
 
 // Tiap dunia 12 level, semuanya jenis game beda.
@@ -67,37 +76,37 @@ const WORLDS = [
     memory: ['🌸', '🌷', '🌻', '🌼', '🍓', '🌺', '🦋', '🐞', '🌈', '🍀', '🐰', '🍄'],
     catchGood: ['🌸', '🌷', '💖'],
     layout: [0, 1, 2, 'a', 3, 'c', 4, 'b', 'd', 'e', 'f', 5],
-    slots: { 3: G.simon(5, 660), 4: G.runner(0, ['🌷', '🍄', '🪨']) },
-    a: G.odd(6, 5, 40), b: G.maze(0), c: G.fly(6, 225, 140, 240), d: G.timing(0), e: G.stack(0), f: G.throw(0),
+    slots: { 3: G.coop(0), 4: G.runner(0, ['🌷', '🍄', '🪨']) },
+    a: G.race(0), b: G.cook(0), c: G.fly(6, 225, 140, 240), d: G.timing(0), e: G.fight(0), f: G.bomb(0),
     bonus: { ...PHOTO.fall, size: 3, time: 90 } },
   { name: 'Kota Permen', icon: '🍭', theme: 'w-candy', player: '🧺',
     memory: ['🍭', '🍬', '🧁', '🍩', '🍰', '🍪', '🍫', '🍦', '🍡', '🍮', '🎂', '🍒'],
     catchGood: ['🍬', '🍭', '🧁'],
     layout: [0, 1, 2, 'a', 3, 'c', 4, 'd', 'e', 'b', 'f', 5],
-    slots: { 3: G.stack(1), 4: G.runner(1, ['🍬', '🧁', '🍩']) },
-    a: G.fly(8, 210, 150, 230), b: G.odd(8, 6, 50), c: G.simon(5, 620), d: G.throw(1), e: G.timing(1), f: G.maze(1),
+    slots: { 3: G.stack(1), 4: G.pillow(1) },
+    a: G.penalty(1), b: G.race(1), c: G.simon(5, 620), d: G.throw(1), e: G.bomb(1), f: G.coop(1),
     bonus: { ...PHOTO.aidan, size: 3, time: 90 } },
   { name: 'Pantai Cinta', icon: '🏖️', theme: 'w-beach', player: '🪣',
     memory: ['🐚', '🦀', '🐠', '🐬', '🌴', '🍉', '🍍', '🥥', '🐳', '⛱️', '🦩', '🐙'],
     catchGood: ['🐚', '🍉', '🐠'],
     layout: [0, 1, 2, 'a', 3, 'c', 4, 'e', 'f', 'd', 'b', 5],
-    slots: { 3: G.runner(2, ['🦀', '🐚', '🪨']), 4: G.stack(2) },
-    a: G.simon(6, 560), b: G.fly(10, 195, 165, 220), c: G.odd(8, 6, 50), d: G.maze(2), e: G.throw(2), f: G.timing(2),
+    slots: { 3: G.fight(2), 4: G.cook(2) },
+    a: G.pillow(2), b: G.fly(10, 195, 165, 220), c: G.odd(8, 6, 50), d: G.maze(2), e: G.penalty(2), f: G.coop(2),
     bonus: { ...PHOTO.aidan2, size: 4, time: 150 } },
   { name: 'Langit Bintang', icon: '🌙', theme: 'w-night', player: '🧺',
     memory: ['🌙', '⭐', '🪐', '☁️', '🦄', '🌠', '🔭', '🚀', '🌈', '💫', '🛸', '🎈'],
     catchGood: ['⭐', '🌙', '💫'],
     layout: [0, 1, 2, 'a', 'c', 'd', 'f', 'e', 'b', 3, 4, 5],
-    slots: { 3: G.stack(3), 4: G.runner(3, ['🪐', '☄️', '🌵']) },
-    a: { type: 'puzzle', ...PHOTO.berdua, size: 3, time: 150 }, b: G.simon(7, 500), c: G.fly(10, 195, 165, 220),
-    d: G.odd(9, 6, 55), e: G.throw(3), f: G.timing(3),
+    slots: { 3: G.stack(3), 4: G.fight(3) },
+    a: { type: 'puzzle', ...PHOTO.berdua, size: 3, time: 150 }, b: G.bomb(3), c: G.race(3),
+    d: G.cook(3), e: G.pillow(3), f: G.timing(3),
     bonus: { ...PHOTO.berdua, size: 4, time: 180 } },
   { name: 'Rumah Kita', icon: '🏡', theme: 'w-home', player: '🧺',
     memory: ['🦉', '🐱', '🏡', '☕', '🧸', '🎀', '🍪', '🐾', '🕯️', '🌙', '💌', '🧶'],
     catchGood: ['🐾', '🧶', '💌'],
     layout: [0, 1, 2, 'a', 3, 'b', 'c', 4, 'd', 'e', 'f', 5],
-    slots: { 3: G.runner(4, ['🧸', '🪴', '📦']), 4: G.simon(7, 520) },
-    a: G.stack(4), b: G.maze(4), c: G.throw(4), d: G.fly(10, 195, 165, 220), e: G.odd(9, 6, 55), f: G.timing(4),
+    slots: { 3: G.penalty(4), 4: G.coop(3) },
+    a: G.bomb(4), b: G.maze(4), c: G.race(4), d: G.fight(4), e: G.cook(4), f: G.pillow(4),
     bonus: { ...PHOTO.fall, size: 4, time: 150 } },
 ];
 const EXTRA_SLOTS = ['a', 'b', 'c', 'd', 'e', 'f'];
@@ -228,6 +237,12 @@ function hintFor(L) {
     case 'throw': return `Lempar 💖 ke Aidan Jr yang gerak-gerak! Kena ${p.target} kali, lemparan cuma ${p.throws}.`;
     case 'maze': return `Tarik garis dari muka Fall Jr lewat jalan labirin sampai ketemu Aidan Jr! Waktunya ${p.time} detik.`;
     case 'timing': return `Tap pas jarumnya di zona 💖! Kena ${p.target} kali, zonanya makin kecil.`;
+    case 'race': return `Tahan & geser jari buat nyetir, nyampe finish ${p.goal} m sebelum nyawa habis! Salip mepet = bonus 😎`;
+    case 'fight': return 'Kalahin lawannya! ◀ ▶ jalan, 🦘 lompat, 👊 pukul, 🦶 tendang, 🛡️ tahan buat nangkis, 💖 jurus kalau lingkarannya penuh.';
+    case 'penalty': return `5x nendang + 5x jaga gawang. Kumpulin minimal ${p.goal} gol/tepisan! Geser bola, makin cepat makin tinggi.`;
+    case 'pillow': return 'Lempar bantal ke lawan & hindarin bantalnya! Sembunyi di balik kasur & sofa.';
+    case 'cook': return `Sajiin ${p.goal} pesanan sebelum 3 pelanggan kabur! Ikutin panah 👇 & petunjuk hijau di dapur.`;
+    case 'bomb': return `Taruh bom 💣 terus kabur! Kalahin ${p.bots} lawan, ledakin peti buat power-up.`;
     default: return 'Jawab pertanyaan dari hatiku 💌 (minimal benar 2)';
   }
 }
@@ -288,6 +303,7 @@ function saveBest(type, score) {
   return true;
 }
 const SCORE_UNIT = { bomb: 'menang', race: 'poin', fight: 'menang', penalty: 'poin', pillow: 'menang', cook: 'pesanan', fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan' };
+if (window.__lqTest) { window.__levels = LEVELS; window.__startLevel = (i) => startLevel(i); }
 if (window.__lqTest) window.__startType = (type, k = 2) => startLevel({ id: `t-${type}`, track: type, k, num: k + 1, type, world: 1, params: trackParams(type, k) });
 function endlessLevel(type) {
   const base = trackParams(type, 1);
@@ -341,11 +357,23 @@ const stageEl = $('#stage');
 const modal = $('#modal');
 const pet = initPet({ sfx, toast: (t) => toast(t) }); // Peliharaan Kita
 
+// Kartu besar di beranda: nunjukin level berikutnya & progres bintang
+function updateHero() {
+  const el = $('#hero-title'); if (!el) return;
+  const total = LEVELS.reduce((a, L) => a + starsOf(L), 0);
+  const main = LEVELS.filter((L) => !L.bonus), doneN = main.filter(cleared).length;
+  const next = main.find((L) => unlocked(L) && !cleared(L));
+  $('#hero-kicker').textContent = doneN ? 'Lanjut petualangan' : 'Mulai petualangan';
+  el.textContent = next ? `Level ${next.num} · ${TYPE_NAME[next.type]}` : 'Semua level tamat! 🎉';
+  $('#hero-sub').textContent = `⭐ ${total}/${MAX_STARS} bintang · ${doneN}/${main.length} level`;
+  $('#hero-bar').style.width = `${Math.max(4, (doneN / main.length) * 100)}%`;
+}
 function show(name) {
   Object.entries(screens).forEach(([k, el]) => el.classList.toggle('active', k === name));
   document.body.classList.toggle('playing', name === 'game');
   if (name === 'map') renderMap();
   if (name === 'home' || name === 'map') refreshStreak();
+  if (name === 'home') updateHero();
   if (name === 'letter') renderLetter();
   if (name === 'talk') talk.reset();
   else talk.setSync(false);
@@ -611,7 +639,9 @@ function startLevel(i) {
   const begin = () => {
     if (!live()) return;
     owlHint();
-    current.game = STARTERS[L.type](stageEl, L.params, api);
+    const NEWG = ['race', 'fight', 'penalty', 'pillow', 'cook', 'bomb', 'coop'];
+    const params = !L.endless && !L.track && NEWG.includes(L.type) ? { ...trackParams(L.type, 0), ...L.params } : L.params;
+    current.game = STARTERS[L.type](stageEl, params, api);
   };
   if (NO_COUNTDOWN.includes(L.type)) {
     owlHint();
@@ -1121,3 +1151,5 @@ for (let i = 0; i < 16; i++) {
   s.style.animationDelay = `${-Math.random() * 20}s`;
   bg.appendChild(s);
 }
+updateHero();
+setupNav();
