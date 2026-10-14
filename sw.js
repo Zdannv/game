@@ -1,6 +1,6 @@
 // Service worker: bikin game bisa dipasang ke home screen, bisa dimainin offline,
 // dan menampilkan notifikasi streak.
-const CACHE = 'love-quest-v39';
+const CACHE = 'love-quest-v40';
 const FONT_CACHE = 'love-quest-fonts';
 const FX_CACHE = 'lq-fx-v1'; // ikon 3D (img/fx): nggak ikut kehapus tiap update
 
