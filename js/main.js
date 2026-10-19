@@ -84,14 +84,14 @@ const WORLDS = [
     catchGood: ['🍬', '🍭', '🧁'],
     layout: [0, 1, 2, 'a', 3, 'c', 4, 'd', 'e', 'b', 'f', 5],
     slots: { 3: G.stack(1), 4: G.pillow(1) },
-    a: G.penalty(1), b: G.race(1), c: G.simon(5, 620), d: G.throw(1), e: G.bomb(1), f: G.coop(1),
+    a: G.penalty(1), b: G.race(1), c: G.simon(5, 620), d: G.throw(1), e: G.bomb(1), f: G.coop(2),
     bonus: { ...PHOTO.aidan, size: 3, time: 90 } },
   { name: 'Pantai Cinta', icon: '🏖️', theme: 'w-beach', player: '🪣',
     memory: ['🐚', '🦀', '🐠', '🐬', '🌴', '🍉', '🍍', '🥥', '🐳', '⛱️', '🦩', '🐙'],
     catchGood: ['🐚', '🍉', '🐠'],
     layout: [0, 1, 2, 'a', 3, 'c', 4, 'e', 'f', 'd', 'b', 5],
     slots: { 3: G.fight(2), 4: G.cook(2) },
-    a: G.pillow(2), b: G.fly(10, 195, 165, 220), c: G.odd(8, 6, 50), d: G.maze(2), e: G.penalty(2), f: G.coop(2),
+    a: G.pillow(2), b: G.fly(10, 195, 165, 220), c: G.odd(8, 6, 50), d: G.maze(2), e: G.penalty(2), f: G.coop(3),
     bonus: { ...PHOTO.aidan2, size: 4, time: 150 } },
   { name: 'Langit Bintang', icon: '🌙', theme: 'w-night', player: '🧺',
     memory: ['🌙', '⭐', '🪐', '☁️', '🦄', '🌠', '🔭', '🚀', '🌈', '💫', '🛸', '🎈'],
@@ -105,7 +105,7 @@ const WORLDS = [
     memory: ['🦉', '🐱', '🏡', '☕', '🧸', '🎀', '🍪', '🐾', '🕯️', '🌙', '💌', '🧶'],
     catchGood: ['🐾', '🧶', '💌'],
     layout: [0, 1, 2, 'a', 3, 'b', 'c', 4, 'd', 'e', 'f', 5],
-    slots: { 3: G.penalty(4), 4: G.coop(3) },
+    slots: { 3: G.penalty(4), 4: G.coop(5) },
     a: G.bomb(4), b: G.maze(4), c: G.race(4), d: G.fight(4), e: G.cook(4), f: G.pillow(4),
     bonus: { ...PHOTO.fall, size: 4, time: 150 } },
 ];
@@ -219,7 +219,7 @@ function hintFor(L) {
   if (L.endless && L.type === 'race') return `Tahan & geser jari buat nyetir, salip mobil mepet buat bonus! 3 nyawa. Rekor kamu: ${p.best || 0} poin 🏆`;
   if (L.endless && L.type === 'penalty') return `Gantian nendang & jaga gawang lawan bot! Gol / tepisan = +1, gagal = -1 nyawa. Rekor kamu: ${p.best || 0} 🏆`;
   if (L.endless && L.type === 'pillow') return `Lempar bantal ke lawan, hindarin bantalnya, sembunyi di balik kasur! Rekor kamu: ${p.best || 0} menang 🏆`;
-  if (L.endless && L.type === 'cook') return `Masak sesuai pesanan sebelum pelanggannya kabur! 3 kabur = selesai. Rekor kamu: ${p.best || 0} pesanan 🏆`;
+  if (L.endless && L.type === 'cook') return `Masak sesuai pesanan sebelum pelanggannya kabur! 5 kabur = selesai. Rekor kamu: ${p.best || 0} pesanan 🏆`;
   if (L.endless && L.type === 'bomb') return `Taruh bom, kabur, ledakin lawan! Tiap ronde botnya makin pinter. Rekor kamu: ${p.best || 0} menang 🏆`;
   if (L.type === 'coop') return `🔥 Api aman di lava, 💧 Air aman di air. Pencet tombol Ganti buat gantian gerakin, bawa dua-duanya ke pintu masing-masing!`;
   if (L.endless && L.type === 'fight') return `Kalahin lawan sebanyak-banyaknya, tiap ronde lawannya makin jago! Rekor kamu: ${p.best || 0} menang 🏆`;
@@ -241,7 +241,7 @@ function hintFor(L) {
     case 'fight': return 'Kalahin lawannya! ◀ ▶ jalan, 🦘 lompat, 👊 pukul, 🦶 tendang, 🛡️ tahan buat nangkis, 💖 jurus kalau lingkarannya penuh.';
     case 'penalty': return `5x nendang + 5x jaga gawang. Kumpulin minimal ${p.goal} gol/tepisan! Geser bola, makin cepat makin tinggi.`;
     case 'pillow': return 'Lempar bantal ke lawan & hindarin bantalnya! Sembunyi di balik kasur & sofa.';
-    case 'cook': return `Sajiin ${p.goal} pesanan sebelum 3 pelanggan kabur! Ikutin panah 👇 & petunjuk hijau di dapur.`;
+    case 'cook': return `Sajiin ${p.goal || 'sebanyak-banyaknya'} pesanan! Ambil bahan → potong / masak → antar satu-satu ke 🛎️ SAJI. Ikutin panah 👇 kalau bingung.`;
     case 'bomb': return `Taruh bom 💣 terus kabur! Kalahin ${p.bots} lawan, ledakin peti buat power-up.`;
     default: return 'Jawab pertanyaan dari hatiku 💌 (minimal benar 2)';
   }
