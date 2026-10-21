@@ -6,34 +6,19 @@ import { setupNav } from './nav.js';
 import { gameTile, gameHead, gameColor } from './game-look.js';
 import { sfx, toggleMute, isMuted, toggleMusic, isMusicOff } from './audio.js';
 import { confetti } from './confetti.js';
+import { shareCard } from './share.js';
+import { applySettings, openSettings } from './settings.js';
+import { initDaily, renderDaily as renderMissions, track as trackDaily } from './daily.js';
 import { esc, pick } from './util.js';
 import { setupGate, dailyMessage, openKita, unreadCount } from './kita.js';
 import { initTalk } from './talk.js';
 import { initDraw } from './draw.js';
-import { initPet } from './pet.js';
+import { initPet, grantCoins, partnerDaily, recordH2H, getH2H } from './pet.js';
 import { mountOnline, enterLobby, refreshLobby, inviteGame, on as onNet, send as sendNet, me as meNet, peer as peerNet, playerLook } from './online.js';
 import { ONLINE_GAMES, LEVEL_GAMES } from './online-games.js';
-import { DUO_NAMES, recordDuo, duoUnlocked, getDuoLevel, nextDuoLevel, duoLabel } from './duo-levels.js';
-import { startMemory } from './games/memory.js';
-import { startCatch } from './games/catch.js';
-import { startPop } from './games/pop.js';
-import { startQuiz } from './games/quiz.js';
-import { startPuzzle } from './games/puzzle.js';
-import { startOdd } from './games/odd.js';
-import { startSimon } from './games/simon.js';
-import { startFly } from './games/fly.js';
-import { startStack } from './games/stack.js';
-import { startRunner } from './games/runner.js';
-import { startThrow } from './games/throw.js';
-import { startMaze } from './games/maze.js';
-import { startTiming } from './games/timing.js';
-import { startRace } from './games/race.js';
-import { startFight } from './games/fight.js';
-import { startPenalty } from './games/penalty.js';
-import { startPillow } from './games/pillow.js';
-import { startCook } from './games/cook.js';
-import { startBomb } from './games/bomb.js';
+import { DUO_NAMES, DUO_ICONS, recordDuo, duoUnlocked, getDuoLevel, nextDuoLevel, duoLabel } from './duo-levels.js';
 import { startCoop, COOP_LEVELS } from './games/coop.js';
+import { lazyStart, prefetchGame } from './game-loader.js';
 import { streakEnabled, getPlayer, setPlayer, recordPlay, flushPlays, pendingPlays, loadStreak, notifyPlayed, pushState, enablePush, setBadge } from './streak.js';
 fxWatch(); // emoji di halaman → ikon 3D
 
@@ -64,6 +49,9 @@ const G = {
   fight: (wi) => ({ type: 'fight', botLevel: wi }),
   penalty: (wi) => ({ type: 'penalty', goal: [4, 5, 5, 5, 5][wi], botLevel: wi }),
   pillow: (wi) => ({ type: 'pillow', botLevel: wi }),
+  sumo: (wi) => ({ type: 'sumo', botLevel: wi }),
+  balloon: (wi) => ({ type: 'balloon', goal: [150, 250, 350, 450, 550][wi], waterFace: FACE.fall, fireFace: FACE.aidan, waterEmoji: '🐹', fireEmoji: '🐱' }),
+  math: (wi) => ({ type: 'math', target: [8, 10, 12, 14, 16][wi], time: [70, 70, 65, 65, 60][wi], start: Math.min(4, wi) }),
   cook: (wi) => ({ type: 'cook', goal: [3, 4, 4, 5, 6][wi] }),
   bomb: (wi) => ({ type: 'bomb', bots: [1, 2, 2, 3, 3][wi], botLevel: wi }),
   coop: (n) => ({ type: 'coop', level: n }),
@@ -143,17 +131,16 @@ const TYPE_NAME = {
   memory: 'Kartu Kembar', catch: 'Tangkap Cinta', pop: 'Tap si Imut', quiz: 'Kuis Sayang',
   puzzle: 'Puzzle Foto', odd: 'Cari yang Beda', simon: 'Ingat Urutan', fly: 'Terbang Tinggi',
   stack: 'Susun Kue', runner: 'Lari Lompat', throw: 'Lempar Hati', maze: 'Labirin Cinta', timing: 'Panah Cinta',
-  race: 'Ngebut Pulang', fight: 'Gelut Sayang', penalty: 'Adu Penalti', pillow: 'Perang Bantal', cook: 'Masak Bareng', bomb: 'Bom Cinta', coop: 'Jalan Pulang Berdua',
+  race: 'Ngebut Pulang', fight: 'Gelut Sayang', penalty: 'Adu Penalti', pillow: 'Perang Bantal', cook: 'Masak Bareng', bomb: 'Bom Cinta', coop: 'Jalan Pulang Berdua', sumo: 'Sumo Gemoy', math: 'Adu Hitung', balloon: 'Balon Berdua',
 };
 const TYPE_ICON = {
   memory: '🃏', catch: '🧺', pop: '👆', quiz: '💌', puzzle: '🧩', odd: '🔍', simon: '🎵', fly: '🦉',
-  stack: '🎂', runner: '🏃', throw: '🎯', maze: '🧭', timing: '💘', race: '🏍️', fight: '🥊', penalty: '⚽', pillow: '🛏️', cook: '🧑‍🍳', bomb: '💣', coop: '🏠',
+  stack: '🎂', runner: '🏃', throw: '🎯', maze: '🧭', timing: '💘', race: '🏍️', fight: '🥊', penalty: '⚽', pillow: '🛏️', cook: '🧑‍🍳', bomb: '💣', coop: '🏠', sumo: '🤼', math: '🧮', balloon: '🎈',
 };
+// Game dimuat pas mau dimainin (game-loader.js); Jalan Pulang langsung karena data levelnya dipake di peta
 const STARTERS = {
-  memory: startMemory, catch: startCatch, pop: startPop, quiz: startQuiz,
-  puzzle: startPuzzle, odd: startOdd, simon: startSimon, fly: startFly,
-  stack: startStack, runner: startRunner, throw: startThrow, maze: startMaze, timing: startTiming,
-  race: startRace, fight: startFight, penalty: startPenalty, pillow: startPillow, cook: startCook, bomb: startBomb, coop: startCoop,
+  memory: lazyStart('memory'), catch: lazyStart('catch'), pop: lazyStart('pop'), quiz: lazyStart('quiz'), puzzle: lazyStart('puzzle'), odd: lazyStart('odd'), simon: lazyStart('simon'), fly: lazyStart('fly'), stack: lazyStart('stack'), runner: lazyStart('runner'), throw: lazyStart('throw'), maze: lazyStart('maze'), timing: lazyStart('timing'), race: lazyStart('race'), fight: lazyStart('fight'), penalty: lazyStart('penalty'), pillow: lazyStart('pillow'), sumo: lazyStart('sumo'), math: lazyStart('math'), cook: lazyStart('cook'), bomb: lazyStart('bomb'), balloon: lazyStart('balloon'),
+  coop: startCoop,
 };
 const NO_COUNTDOWN = ['quiz', 'puzzle'];
 const LETTER_LEVEL = 'w3-5'; // kuis terakhir dunia 4 → buka surat
@@ -226,7 +213,10 @@ function hintFor(L) {
   if (L.endless && L.type === 'fight') return `Kalahin lawan sebanyak-banyaknya, tiap ronde lawannya makin jago! Rekor kamu: ${p.best || 0} menang 🏆`;
   if (L.endless) return `Main terus sampai nyawa habis, makin lama makin susah! Rekor kamu: ${p.best || 0} ${SCORE_UNIT[L.type]} 🏆`;
   switch (L.type) {
-    case 'memory': return `Cari ${p.pairs} pasang kartu kembar dalam ${p.time} detik!`;
+    case 'sumo': return 'Dorong lawan keluar matras! Menang 2 ronde duluan. 💥 Seruduk buat dorong kenceng.';
+    case 'balloon': return `Terbangin balon sampai ${p.goal} m! Nyalain 🔥 kiri & kanan bareng biar naik lurus, hindari ⛈️ & 🐦.`;
+    case 'math': return `Jawab ${p.target} soal hitungan bener dalam ${p.time} detik. Salah 3x = gagal!`;
+    case 'memory': return `Cari ${p.pairs} pasang kartu kembar dalam ${p.time} detik!${p.swap ? ' Awas kartu nakal: tiap salah, 2 kartu tukeran tempat 🔀' : ''}`;
     case 'catch': return `Geser 🐱 buat nangkep ${p.good.join('')}, hindari ${p.bad.join('')}! Target ${p.target}. Ada Aidan Jr jatuh? Tangkep! +10`;
     case 'pop': return `Tap ${p.good.join('')} secepatnya (${p.gold} = +3), jangan tap ${p.bad[0]}! Target ${p.target}.`;
     case 'puzzle': return 'Tap 2 kepingan buat tukar posisi sampai fotonya utuh! Tahan 👀 buat intip.';
@@ -250,7 +240,7 @@ function hintFor(L) {
 const levelLabel = (L) => (L.bonus ? 'Bonus ⭐' : `Level ${L.num}`);
 
 // ---------- Main Sendiri: Pilih game (tiap jenis game punya level sendiri, makin susah) ----------
-const SOLO_TYPES = ['race', 'fight', 'penalty', 'pillow', 'cook', 'bomb', 'coop', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon', 'memory', 'pop', 'puzzle', 'odd', 'throw', 'maze', 'quiz'];
+const SOLO_TYPES = ['sumo', 'balloon', 'math', 'race', 'fight', 'penalty', 'pillow', 'cook', 'bomb', 'coop', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon', 'memory', 'pop', 'puzzle', 'odd', 'throw', 'maze', 'quiz'];
 const trackLen = (t) => (t === 'quiz' ? Math.min(5, CONFIG.quiz.length) : t === 'coop' ? COOP_LEVELS.length : 10);
 const worldParams = (wi, type) => [wi, wi - 1, wi + 1, wi - 2, 0].map((x) => LEVELS.find((L) => L.world === x && L.type === type && !L.bonus)?.params).find(Boolean);
 // k = level 0..9 → setelan game (dipakai juga buat Main Berdua yang skornya dijumlah)
@@ -260,7 +250,7 @@ function trackParams(type, k) {
   const d = k * 0.4; // 0 … 3.6
   const odd = k % 2; // level genap/ganjil di dunia yang sama: yang ganjil sedikit lebih susah
   switch (type) {
-    case 'memory': { const pairs = [3, 4, 4, 5, 6, 6, 8, 8, 10, 10][k]; return { pairs, emojis: w.memory, time: Math.round(pairs * (7 - Math.min(wi, 3) * 0.6) + 12) }; }
+    case 'memory': { const pairs = [3, 4, 4, 5, 6, 6, 8, 8, 10, 10][k]; return { pairs, emojis: w.memory, time: Math.round(pairs * (7 - Math.min(wi, 3) * 0.6) + 12) + (k >= 7 ? 8 : 0), swap: k >= 7 }; } // level 8–10: kartu nakal tukeran tempat
     case 'catch': return catchParams(w, d);
     case 'pop': return popParams(wi, d);
     case 'quiz': return { questions: CONFIG.quiz[k] || CONFIG.quiz[0] };
@@ -278,13 +268,15 @@ function trackParams(type, k) {
       const meA = getPlayer() === 'aidan';
       return { type, level: k, waterFace: FACE.fall, fireFace: FACE.aidan, waterName: 'Fall', fireName: 'Aidan', waterToon: 'f', fireToon: 'm', waterEmoji: '🐹', fireEmoji: '🐱', start: meA ? 'fire' : 'water' };
     }
-    case 'race': case 'fight': case 'penalty': case 'pillow': case 'cook': case 'bomb': {
+    case 'balloon': return { type: 'balloon', goal: 120 + k * 55, speed: 1 + k * 0.04, waterFace: FACE.fall, fireFace: FACE.aidan, waterEmoji: '🐹', fireEmoji: '🐱' };
+    case 'math': return { type: 'math', target: 8 + k, time: 70 - Math.min(15, k * 2), start: Math.min(5, Math.floor(k / 2)) };
+    case 'race': case 'fight': case 'penalty': case 'pillow': case 'cook': case 'bomb': case 'sumo': {
       // Yang main = yang lagi login di HP ini; pasangannya jadi papan iklan (balapan) / lawan (gelut)
       const meA = getPlayer() === 'aidan';
       const [mf, of, mn, on] = meA ? [FACE.aidan, FACE.fall, 'Aidan', 'Fall'] : [FACE.fall, FACE.aidan, 'Fall', 'Aidan'];
       return type === 'race'
         ? { type, lives: 3, face: mf, signFace: of, signName: on, rider: meA ? '🐱' : '🐹' }
-        : { type, face: mf, oppFace: of, name: mn, oppName: on, emoji: meA ? '🐱' : '🐹', oppEmoji: meA ? '🐹' : '🐱', toon: meA ? 'm' : 'f', oppToon: meA ? 'f' : 'm' };
+        : { type, ...(type === 'sumo' ? { botLevel: Math.min(8, k) } : {}), face: mf, oppFace: of, name: mn, oppName: on, emoji: meA ? '🐱' : '🐹', oppEmoji: meA ? '🐹' : '🐱', toon: meA ? 'm' : 'f', oppToon: meA ? 'f' : 'm' };
     }
     default: return {};
   }
@@ -294,7 +286,7 @@ function soloTrack(type, k) {
   return { id: `s-${type}-${k}`, track: type, k, num: k + 1, type, world: Math.min(4, Math.floor(k / 2)), params: trackParams(type, k) };
 }
 // Mode skor: game yang bisa dimainin terus → nggak ada level, main sampai nyawa habis, simpan rekor
-const ENDLESS = ['race', 'fight', 'penalty', 'pillow', 'cook', 'bomb', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon'];
+const ENDLESS = ['sumo', 'balloon', 'math', 'race', 'fight', 'penalty', 'pillow', 'cook', 'bomb', 'fly', 'runner', 'stack', 'catch', 'timing', 'simon', 'memory'];
 const BEST_KEY = 'fq-best';
 const bestScores = () => { try { return JSON.parse(localStorage.getItem(BEST_KEY) || '{}'); } catch { return {}; } };
 function saveBest(type, score) {
@@ -304,7 +296,7 @@ function saveBest(type, score) {
   try { localStorage.setItem(BEST_KEY, JSON.stringify(all)); } catch {}
   return true;
 }
-const SCORE_UNIT = { bomb: 'menang', race: 'poin', fight: 'menang', penalty: 'poin', pillow: 'menang', cook: 'pesanan', fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan' };
+const SCORE_UNIT = { bomb: 'menang', race: 'poin', fight: 'menang', penalty: 'poin', pillow: 'menang', cook: 'pesanan', fly: 'tiang', runner: 'detik', stack: 'tingkat', catch: 'poin', timing: 'kena', simon: 'urutan', memory: 'pasang', sumo: 'menang', math: 'soal', balloon: 'meter' };
 if (window.__lqTest) { window.__levels = LEVELS; window.__startLevel = (i) => startLevel(i); }
 if (window.__lqTest) window.__startType = (type, k = 2) => startLevel({ id: `t-${type}`, track: type, k, num: k + 1, type, world: 1, params: trackParams(type, k) });
 function endlessLevel(type) {
@@ -358,6 +350,33 @@ const draw = initDraw({ sfx, toast: (t) => toast(t), onClose: () => { drawOpen =
 const stageEl = $('#stage');
 const modal = $('#modal');
 const pet = initPet({ sfx, toast: (t) => toast(t) }); // Peliharaan Kita
+// Tantangan harian: tiap misi selesai → koin ke dompet peliharaan bareng + kabar kecil
+const PNAME = { fall: 'Fall', aidan: 'Aidan' };
+initDaily({
+  types: SOLO_TYPES.filter((t) => t !== 'quiz' && t !== 'coop'), name: (t) => TYPE_NAME[t] || t, icon: (t) => TYPE_ICON[t] || '🎮',
+  onDone: ({ tasks, coins, bonus, count }) => {
+    grantCoins(coins, { done: count }).catch(() => {});
+    setTimeout(() => {
+      toast(bonus ? `🎉 3 misi hari ini beres! +${coins} 🪙 buat peliharaan` : `🎯 Misi beres: ${tasks.map((t) => t.t).join(', ')} · +${coins} 🪙`);
+      if (bonus) { confetti(120); sfx('gold'); }
+      if (screens.home.classList.contains('active')) renderMissions($('#daily-home'));
+    }, current ? 1600 : 200);
+  },
+  partner: async () => {
+    const me = getPlayer(); if (!me) return '';
+    const other = me === 'fall' ? 'aidan' : 'fall', n = await partnerDaily(other);
+    return n >= 3 ? `${PNAME[other]} udah beres 3/3 hari ini 🎉` : n ? `${PNAME[other]} udah ${n}/3 hari ini 💪` : `${PNAME[other]} belum mulai misi hari ini`;
+  },
+});
+document.addEventListener('click', (e) => {
+  const go = e.target.closest('[data-daily-go]')?.dataset.dailyGo; if (!go) return;
+  sfx('click');
+  if (go === 'duo') show('online');
+  else if (go === 'map' || go === 'per') { soloTab = go === 'map' ? 'adv' : 'per'; soloTrackType = ''; show('map'); }
+  else if (go === 'talk') $('#btn-talk').click();
+  else if (go === 'pet') $('#btn-pet').click();
+  else if (go.startsWith('game:')) { soloTab = 'per'; soloTrackType = go.slice(5); show('map'); }
+});
 
 // Kartu besar di beranda: nunjukin level berikutnya & progres bintang
 function updateHero() {
@@ -376,11 +395,11 @@ function show(name) {
   unzoom();
   if (name === 'map') renderMap();
   if (name === 'home' || name === 'map') refreshStreak();
-  if (name === 'home') updateHero();
+  if (name === 'home') { updateHero(); renderMissions($('#daily-home')); }
   if (name === 'letter') renderLetter();
   if (name === 'talk') talk.reset();
   else talk.setSync(false);
-  if (name === 'online') enterLobby();
+  if (name === 'online') { $('#duo-nav').innerHTML = playNav('duo', 'data-duo-tab'); enterLobby(); }
   if (name !== 'draw' && drawOpen) draw.close();
   if (name === 'pet') pet.open(); else pet.close();
   window.scrollTo(0, 0);
@@ -438,13 +457,15 @@ async function refreshKitaBadge() {
 refreshKitaBadge();
 document.addEventListener('kita-closed', refreshKitaBadge);
 window.addEventListener('online', refreshKitaBadge);
-$('#btn-reset').addEventListener('click', () => {
-  if (confirm('Yakin mau reset semua progress? Semua bintang bakal hilang 🥺')) {
-    progress = { stars: {} };
-    saveProgress();
-    sfx('click');
-  }
-});
+applySettings();
+function settings() {
+  openSettings({
+    toast,
+    resetTutorial: () => { try { Object.keys(localStorage).filter((k) => k.startsWith('lq-howto-')).forEach((k) => localStorage.removeItem(k)); } catch {} },
+    resetProgress: () => { progress = { stars: {} }; saveProgress(); sfx('click'); toast('Progres di HP ini udah direset 🔄'); if (screens.home.classList.contains('active')) updateHero(); },
+  });
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('[data-settings]')) return; sfx('click'); settings(); });
 
 const soundBtn = $('#btn-sound');
 const syncSound = () => (soundBtn.textContent = isMuted() ? '🔇' : '🔊');
@@ -460,8 +481,22 @@ musicBtn.addEventListener('click', () => { toggleMusic(); syncMusicBtn(); sfx('c
 const worldsEl = $('#worlds');
 
 let soloTab = 'adv', soloTrackType = '';
+// Menu atas layar Main: "Main sendiri" (Petualangan / Pilih game) + kartu "Main Berdua" yang beda gaya biar gampang ketemu
+function playNav(active, attr) {
+  const done = LEVELS.filter((L) => cleared(L)).length;
+  const peerOn = Boolean(peerNet());
+  const seg = (id, ic, t, sub) => `<button type="button" role="tab" ${attr}="${id}" aria-selected="${active === id}"><span class="pn-ic">${ic}</span><b>${t}</b><small>${sub}</small></button>`;
+  return `<div class="pn-solo"><small class="pn-lb">🎮 Main sendiri</small><div class="pn-seg" role="tablist">
+      ${seg('adv', '🗺️', 'Petualangan', `${done}/${LEVELS.length} level`)}${seg('per', '🎯', 'Pilih game', `${SOLO_TYPES.length} game · rekor`)}
+    </div></div>
+    <button type="button" class="pn-duo ${active === 'duo' ? 'on' : ''}" ${attr}="duo" aria-pressed="${active === 'duo'}">
+      <span class="pn-avas"><i><img src="${FACE.fall}" alt=""></i><i><img src="${FACE.aidan}" alt=""></i></span>
+      <span class="pn-txt"><b>Main Berdua 💞</b><small>${peerOn ? `<em>●</em> ${esc(peerNet().name)} lagi online` : 'Bareng dari HP masing-masing'}</small></span>
+      <span class="pn-go">${active === 'duo' ? '✓' : '›'}</span>
+    </button>`;
+}
 function renderMap() {
-  $('#solo-tabs').innerHTML = [['adv', '🗺️ Petualangan'], ['per', '🎯 Pilih game']].map(([id, t]) => `<button type="button" role="tab" data-solo-tab="${id}" aria-selected="${soloTab === id}">${t}</button>`).join('');
+  $('#solo-tabs').innerHTML = playNav(soloTab, 'data-solo-tab');
   if (soloTab === 'per') return renderTracks();
   const total = LEVELS.reduce((a, L) => a + starsOf(L), 0);
   $('#star-count').textContent = TEST_MODE ? '🔓 Mode tes' : `${total}/${MAX_STARS}`;
@@ -545,9 +580,14 @@ $('#solo-tabs').addEventListener('click', (e) => {
   const b = e.target.closest('[data-solo-tab]');
   if (!b) return;
   sfx('click');
+  if (b.dataset.soloTab === 'duo') { show('online'); return; }
   soloTab = b.dataset.soloTab;
   soloTrackType = '';
   renderMap();
+});
+$('#duo-nav').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-duo-tab]'); if (!b || b.dataset.duoTab === 'duo') return;
+  sfx('click'); soloTab = b.dataset.duoTab; soloTrackType = ''; show('map');
 });
 
 worldsEl.addEventListener('click', (e) => {
@@ -621,6 +661,7 @@ function startLevel(i) {
   stopGame();
   closeModal();
   const L = typeof i === 'object' ? i : LEVELS[i]; // angka = level peta, objek = level per game
+  prefetchGame(L.type)?.catch(() => {});
   show('game');
   screens.game.dataset.theme = WORLDS[L.world].theme;
   screens.game.dataset.game = L.type.replace(/co$/, ''); // latar sesuai game
@@ -771,6 +812,7 @@ function startOnline(game, seed, levelId = null, extra = {}) {
   closeModal();
   const L = getDuoLevel(levelId);
   const G = L ? LEVEL_GAMES[L.type] : ONLINE_GAMES[game];
+  prefetchGame((L ? L.type : game).replace(/co$/, ''))?.catch(() => {});
   const m = meNet(), p = peerNet();
   if (!G || !p) { show('online'); return; }
   show('game');
@@ -781,7 +823,7 @@ function startOnline(game, seed, levelId = null, extra = {}) {
   $('#hud-stats').textContent = '';
   hintText = L ? `Level ${L.num}: ${DUO_NAMES[L.type]} bareng ${p.name} 💞` : G.desc;
   const token = {};
-  current = { i: -1, token, game: null, online: game };
+  current = { i: -1, token, game: null, online: game, seed };
   const live = () => current?.token === token;
   const ctx = {
     seed, send: sendNet, on: onNet, params: onlineParams(L ? L.type : game, L), level: L, extra,
@@ -828,8 +870,24 @@ function startOnline(game, seed, levelId = null, extra = {}) {
   else begin();
 }
 
+// Game berdua yang ada menang-kalahnya: papan skor (disimpen di data peliharaan bareng, kunci fall/aidan)
+const COMPETE = ['sumo', 'math', 'bomb', 'penalty', 'pillow', 'race', 'fight', 'fly', 'memory', 'tebak'];
+function h2hLine(game, r, seed) {
+  const me = getPlayer(); if (!COMPETE.includes(game) || !me) return Promise.resolve('');
+  const other = me === 'fall' ? 'aidan' : 'fall';
+  const iWrite = r.draw ? me === 'fall' : r.win;
+  const job = iWrite ? recordH2H(game, r.draw ? 'draw' : 'win', seed) : new Promise((ok) => setTimeout(ok, 1200)).then(getH2H);
+  return job.then((all) => {
+    const g = { fall: 0, aidan: 0, draw: 0, ...(all[game] || {}) };
+    if (!iWrite && g.last !== seed) { if (r.draw) g.draw++; else g[other]++; }
+    const a = g[me], b = g[other], lead = a > b ? `${PNAME[me]} unggul 👑` : b > a ? `${PNAME[other]} unggul 👑` : 'Imbang! 🤝';
+    return `<div class="h2h-line"><small>Papan skor ${esc(TYPE_NAME[game] || ONLINE_GAMES[game]?.name || game)} sepanjang masa</small><b>${PNAME[me]} <em>${a}</em> – <em>${b}</em> ${PNAME[other]}</b><span>${lead}${g.draw ? ` · seri ${g.draw}x` : ''}</span></div>`;
+  }).catch(() => '');
+}
 function onlineFinish(token, game, r, L) {
   if (current?.token !== token) return;
+  const h2h = L ? Promise.resolve('') : h2hLine(game, r, current.seed);
+  trackDaily('duo'); if (r.win && !r.draw) trackDaily('duoWin'); trackDaily(`type:${(L ? L.type : game).replace(/co$/, '')}`);
   if (r.win) { sfx('win'); confetti(); } else sfx('lose');
   if (L && r.stars) recordDuo(L.id, r.stars);
   if (L) recordPlay().then((isNew) => { if (isNew) { refreshStreak(true); if (!pendingPlays()) notifyPlayed(); } }).catch(() => {});
@@ -844,12 +902,15 @@ function onlineFinish(token, game, r, L) {
       <h2>${esc(r.title)}</h2>
       ${stars}
       <p class="detail">${esc(r.detail)}</p>
+      <div data-h2h></div>
+      ${r.win || r.draw ? shareBtn({ icon: L ? DUO_ICONS[L.type] : ONLINE_GAMES[game]?.icon, kicker: L ? `Berdua · ${duoLabel(L)}` : `Main Berdua · ${ONLINE_GAMES[game]?.name || ''}`, title: r.title, stars: L && r.win ? r.stars : null, sub: r.detail }) : ''}
       <div class="modal-actions">
         <button class="btn ghost" data-go="online">${L ? '🗺️ Peta' : '🎮 Lobby'}</button>
         ${L ? `<button class="btn ${next ? 'ghost' : ''}" data-ol-level="${L.id}">🔁 Ulangi</button>` : `<button class="btn" data-ol-again="${game}">Main lagi 🔁</button>`}
         ${next && duoUnlocked(next) ? `<button class="btn" data-ol-level="${next.id}">Lanjut ▶</button>` : ''}
       </div>`;
     modal.classList.remove('hidden');
+    h2h.then((html) => { const el = modal.querySelector('[data-h2h]'); if (el && html) el.innerHTML = html; });
     refreshLobby();
   }, 700);
 }
@@ -883,7 +944,10 @@ const LOSE_LINES = [
 function onFinish(token, r) {
   if (current?.token !== token) return;
   const L = current.L;
-  if (L.endless) return endlessFinish(token, L, r);
+  trackDaily(`type:${L.type}`);
+  if (L.endless) { trackDaily('endless'); return endlessFinish(token, L, r); }
+  if (r.win && !L.track && !L.bonus) trackDaily('level');
+  if (r.win && r.stars >= 3) trackDaily('stars3');
   recordPlay()
     .then((isNew) => { if (isNew) { refreshStreak(true); if (!pendingPlays()) notifyPlayed(); } })
     .catch(() => {});
@@ -920,6 +984,7 @@ function endlessFinish(token, L, r) {
       <div class="score-big">${r.score || 0}<small>${unit}</small></div>
       <h2>${record ? 'Rekor baru! 🎉' : `Rekor kamu ${old} ${unit}`}</h2>
       <p class="detail">${esc(r.detail || '')}${record && old ? ` · rekor lama ${old}` : ''}</p>
+      ${(r.score || 0) > 0 ? shareBtn({ icon: TYPE_ICON[L.type], kicker: `${TYPE_NAME[L.type]} · Mode skor`, title: record ? `Rekor baru: ${r.score} ${unit}!` : `${r.score} ${unit}`, stars: null, sub: r.detail || '' }) : ''}
       <div class="modal-actions">
         <button class="btn ghost" data-go="map">🎯 Pilih game</button>
         <button class="btn" data-act="retry">Main lagi 🔁</button>
@@ -929,6 +994,14 @@ function endlessFinish(token, L, r) {
 }
 
 let resultL = null;
+// Kartu hasil buat dipamerin (story / WA)
+let pendingShare = null;
+function shareBtn(o) {
+  const css = getComputedStyle(document.documentElement), col = (v, d) => css.getPropertyValue(v).trim() || d;
+  pendingShare = { brand: "FALICYA'S GAME 💖", faces: [FACE.fall, FACE.aidan], names: ['Fall', 'Aidan'], colors: [col('--accent-light', '#ff9cc4'), col('--pink', '#ff6f9f'), col('--pink-deep', '#c2306f')], footer: 'Fall & Aidan 💞', shareText: `${o.title} 💞`, ...o };
+  return '<button class="share-btn" type="button" data-share>📸 Pamer ke story</button>';
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('[data-share]') || !pendingShare) return; sfx('click'); shareCard(pendingShare, { toast, sfx }); });
 function showTrackResult(L, r) {
   const next = r.win ? soloTrack(L.track, L.k + 1) : null;
   const stars = [0, 1, 2].map((k) => `<span class="star ${k < r.stars ? 'on' : ''}" style="animation-delay:${0.25 + k * 0.25}s">★</span>`).join('');
@@ -938,6 +1011,7 @@ function showTrackResult(L, r) {
     <h2>${r.win ? `${TYPE_NAME[L.type]} level ${L.num} beres!` : 'Yahh, belum berhasil'}</h2>
     ${r.win ? `<div class="stars">${stars}</div>` : ''}
     <p class="detail">${esc(r.detail)}${r.win && !next ? ' · Semua level game ini udah tamat! 🏆' : ''}</p>
+    ${r.win ? shareBtn({ icon: TYPE_ICON[L.type], kicker: `${TYPE_NAME[L.type]} · Level ${L.num}`, title: 'Level beres!', stars: r.stars, sub: r.detail }) : ''}
     <div class="modal-actions">
       <button class="btn ghost" data-go="map">🎯 Pilih game</button>
       <button class="btn ${next ? 'ghost' : ''}" data-act="retry">🔁 Ulangi</button>
@@ -969,6 +1043,7 @@ function showResult(L, r) {
       <div class="stars">${stars}</div>
       <p class="detail">${esc(r.detail)}</p>
       ${msg ? `<div class="love-note"><span class="from">💌 dari ${esc(CONFIG.from)}</span>${esc(msg)}</div>` : ''}
+      ${shareBtn({ icon: TYPE_ICON[L.type], kicker: `${levelLabel(L)} · ${TYPE_NAME[L.type]}`, title: isLast ? 'Semua level tamat! 👑' : `${levelLabel(L)} selesai!`, stars: r.stars, sub: r.detail, note: msg || '' })}
       <div class="modal-actions">
         <button class="btn ghost" data-go="map">🗺️ Peta</button>
         <button class="btn ghost" data-act="retry">🔁 Ulangi</button>
@@ -1208,4 +1283,8 @@ for (let i = 0; i < 16; i++) {
   bg.appendChild(s);
 }
 updateHero();
+renderMissions($('#daily-home'));
+// Dibuka dari notifikasi "ngajak main" (?duo=1) → langsung ke menu Berdua
+if (new URLSearchParams(location.search).get('duo') === '1') { history.replaceState(null, '', location.pathname); setTimeout(() => show('online'), 300); }
+navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type === 'open-duo') show('online'); });
 setupNav();

@@ -58,14 +58,17 @@ async function once(day: string, kind: string, player: string) {
 
 async function sendTo(player: Player, payload: Record<string, unknown>) {
   const { data } = await db.from('push_subscriptions').select('endpoint, p256dh, auth').eq('player', player);
+  let sent = 0;
   await Promise.all((data ?? []).map(async (s) => {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload));
+      sent++;
     } catch (err) {
       const code = (err as { statusCode?: number }).statusCode;
       if (code === 404 || code === 410) await db.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
     }
   }));
+  return sent; // 0 = pasangan belum nyalain notifikasi
 }
 
 Deno.serve(async (req) => {
@@ -110,6 +113,20 @@ Deno.serve(async (req) => {
       });
     }
     return json({ ok: true });
+  }
+
+  // Ajakan main berdua dari menu Berdua: maks 1x per 2 menit per orang
+  if (body.type === 'invite' && PLAYERS.includes(body.player)) {
+    const p = body.player as Player, o = other(p);
+    const now = new Date(), bucket = `invite:${Math.floor(now.getTime() / 120000)}`;
+    if (!(await once(fmt.format(now), bucket, p))) return json({ ok: false, error: 'tunggu-dulu' }, 429);
+    const game = String(body.game || '').slice(0, 40);
+    const sent = await sendTo(o, {
+      title: `🎮 ${NAME[p]} ngajak main${game ? ` ${game}` : ''}!`,
+      body: `Buka sekarang yuk, ${NAME[p]} udah nunggu di menu Berdua 💞`,
+      tag: 'invite', url: '/?duo=1',
+    });
+    return json({ ok: true, sent });
   }
 
   return json({ error: 'bad request' }, 400);

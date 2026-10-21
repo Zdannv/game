@@ -4,6 +4,7 @@ import { CONFIG } from './config.js';
 import { TALK_CARDS, TALK_CATS } from './talk-cards.js';
 import { fill } from './couple.js';
 import { esc, shuffle } from './util.js';
+import { track as trackDaily } from './daily.js';
 import { on as onNet, send as sendNet, peer as peerNet } from './online.js';
 
 const $ = (s) => document.querySelector(s);
@@ -38,6 +39,7 @@ export function initTalk({ sfx }) {
     if (busy) return;
     if (!deck.length) newDeck();
     const card = deck.pop();
+    trackDaily('talk');
     show(card);
     if (sync) sendNet('talk', { card });
   }

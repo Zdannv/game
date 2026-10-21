@@ -1,6 +1,6 @@
 // Service worker: bikin game bisa dipasang ke home screen, bisa dimainin offline,
 // dan menampilkan notifikasi streak.
-const CACHE = 'love-quest-v50';
+const CACHE = 'love-quest-v54';
 const FONT_CACHE = 'love-quest-fonts';
 const FX_CACHE = 'lq-fx-v1'; // ikon 3D (img/fx): nggak ikut kehapus tiap update
 
@@ -8,9 +8,9 @@ const FX_CACHE = 'lq-fx-v1'; // ikon 3D (img/fx): nggak ikut kehapus tiap update
 // (Kalau nambah file baru, tambahin juga di sini.)
 const PRECACHE = [
   '/', '/index.html', '/manifest.webmanifest', '/css/style.css',
-  '/js/main.js', '/js/pause.js', '/js/config.js', '/js/audio.js', '/js/confetti.js', '/js/util.js', '/js/fx.js', '/js/game-look.js', '/js/pet.js', '/js/pet3d.js', '/js/pet-shop.js', '/js/howto.js', '/js/toon.js', '/js/scene.js', '/js/nav.js', '/js/streak.js', '/js/kita.js', '/js/couple.js', '/js/talk.js', '/js/talk-cards.js', '/js/online.js', '/js/online-games.js', '/js/duo-levels.js', '/js/couple-questions.js', '/js/draw.js',
+  '/js/main.js', '/js/pause.js', '/js/config.js', '/js/audio.js', '/js/confetti.js', '/js/util.js', '/js/fx.js', '/js/game-look.js', '/js/pet.js', '/js/pet3d.js', '/js/pet-shop.js', '/js/daily.js', '/js/share.js', '/js/settings.js', '/js/game-loader.js', '/js/howto.js', '/js/toon.js', '/js/scene.js', '/js/nav.js', '/js/streak.js', '/js/kita.js', '/js/couple.js', '/js/talk.js', '/js/talk-cards.js', '/js/online.js', '/js/online-games.js', '/js/duo-levels.js', '/js/couple-questions.js', '/js/draw.js',
   '/js/games/memory.js', '/js/games/catch.js', '/js/games/pop.js', '/js/games/quiz.js', '/js/games/puzzle.js',
-  '/js/games/odd.js', '/js/games/simon.js', '/js/games/fly.js', '/js/games/race.js', '/js/games/fight.js', '/js/games/penalty.js', '/js/games/pillow.js', '/js/games/cook.js', '/js/games/bomb.js', '/js/games/coop.js', '/js/games/stack.js', '/js/games/runner.js',
+  '/js/games/odd.js', '/js/games/simon.js', '/js/games/fly.js', '/js/games/race.js', '/js/games/fight.js', '/js/games/penalty.js', '/js/games/pillow.js', '/js/games/sumo.js', '/js/games/math.js', '/js/games/balloon.js', '/js/games/cook.js', '/js/games/bomb.js', '/js/games/coop.js', '/js/games/stack.js', '/js/games/runner.js',
   '/js/games/throw.js', '/js/games/maze.js', '/js/games/timing.js',
   '/img/fall-kecil.jpg', '/img/aidan-kecil.jpg', '/img/aidan-kecil-2.jpg', '/img/berdua.jpg',
   '/img/fall-head.jpg', '/img/aidan-head.jpg', '/semangat/',
@@ -105,7 +105,8 @@ self.addEventListener('push', (e) => {
       badge: '/icons/badge-96.png',
       tag: data.tag || 'streak',
       renotify: true,
-      data: { url: '/' },
+      data: { url: data.url || '/' },
+      vibrate: data.tag === 'invite' ? [120, 60, 120] : undefined,
     }),
   ];
   if (typeof data.badge === 'number' && self.navigator.setAppBadge) {
@@ -118,8 +119,10 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      const target = e.notification.data?.url || '/';
       const win = wins.find((w) => 'focus' in w);
-      return win ? win.focus() : self.clients.openWindow('/');
+      if (win) { if (target.includes('duo=1')) win.postMessage({ type: 'open-duo' }); return win.focus(); }
+      return self.clients.openWindow(target);
     }),
   );
 });
