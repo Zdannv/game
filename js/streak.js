@@ -136,6 +136,18 @@ export async function loadStreak() {
 }
 
 // Kabari pasangan lewat notifikasi (edge function pengirim notif). Gagal pun nggak apa-apa.
+// "📣 Panggil" pasangan dari menu Berdua → { ok, sent } (sent 0 = HP-nya belum nyalain notifikasi), { wait } kalau baru aja manggil
+export async function sendInvite(game = '') {
+  const player = getPlayer();
+  if (!streakEnabled || !player) return { ok: false };
+  try {
+    const res = await fetch(`${url.replace(/\/$/, '')}/functions/v1/${pushFunction}`, { method: 'POST', headers: { apikey: anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'invite', player, game }) });
+    if (res.status === 429) return { ok: false, wait: true };
+    const j = await res.json().catch(() => ({}));
+    return { ok: res.ok, sent: j.sent ?? 0 };
+  } catch { return { ok: false }; }
+}
+
 export function notifyPlayed() {
   const player = getPlayer();
   if (!streakEnabled || !player) return Promise.resolve();

@@ -7,6 +7,7 @@ import { getPlayer } from './streak.js';
 import { esc } from './util.js';
 import { createPet3D } from './pet3d.js';
 import { SHOP, RUGS, upgradeShop, rugHex, shopHTML } from './pet-shop.js';
+import { track as trackDaily } from './daily.js';
 
 const { url = '', anonKey = '' } = CONFIG.supabase || {};
 const KEY_STORE = 'fq-kita-key', LOCAL = 'fq-pet';
@@ -67,6 +68,28 @@ async function save(s) {
 }
 
 const WHO = () => getPlayer() || 'fall';
+// Koin dari tantangan harian (masuk ke dompet bareng). Sekalian nyatet berapa misi hari ini yang udah beres per orang,
+// biar HP pasangan bisa nampilin "Dia udah 2/3 hari ini".
+export async function grantCoins(n, { done } = {}) {
+  const s = await load();
+  s.coins = (s.coins || 0) + n;
+  if (done != null) { if (s.dq?.d !== today()) s.dq = { d: today() }; s.dq[WHO()] = done; }
+  await save(s);
+}
+// Papan skor berdua (disimpen di data bareng). Yang nulis cuma HP pemenang (seri: HP "pasangan"), biar nggak dobel.
+// nonce = seed pertandingan, biar HP yang kalah tau kemenangan lawan udah kecatat apa belum.
+export async function recordH2H(game, result, nonce) {
+  const s = await load();
+  s.h2h ||= {};
+  const g = (s.h2h[game] ||= { pasangan: 0, pengirim: 0, draw: 0 });
+  if (result === 'draw') g.draw++; else g[WHO()]++;
+  g.last = nonce; g.at = Date.now();
+  await save(s);
+  return s.h2h;
+}
+export async function getH2H() { const s = await load(); return s.h2h || {}; }
+export async function partnerDaily(role) { const s = await load(); return s.dq?.d === today() ? s.dq[role] || 0 : 0; }
+
 export function initPet({ sfx, toast }) {
   const root = document.querySelector('#pet-root');
   let st = null, busy = false, poll = 0, chatPoll = 0, mode = null, raf = 0;
@@ -86,6 +109,7 @@ export function initPet({ sfx, toast }) {
         s.daily[who] = true;
         if (s.daily.fall && s.daily.aidan && !s.daily.bonus) { s.daily.bonus = true; s.xp += 30; s.coins += 15; bonus = ' · Kalian kompak hari ini! +30 XP +15 🪙 💞'; }
         s.log = [{ w: who, a: kind, t: Date.now() }, ...(s.log || [])].slice(0, 6);
+        setTimeout(() => trackDaily('pet'), 0); // misi harian "rawat peliharaan"
       }
       await save(s);
       st = s;
