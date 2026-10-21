@@ -1759,3 +1759,7 @@ body:not(.is-demo) .home-grid .home-tile small { font-size: 11px; align-self: ce
 
 .daily-card { text-align: left; }
 .daily-card .dc-foot, .daily-card .dc-foot span { font-family: Fredoka, system-ui, sans-serif; font-size: 11.5px; font-style: normal; }
+
+/* Deep Talk: kartu jangan terlalu sempit di HP pendek (tulisannya diatur fitQ() di talk.js) */
+.talk-card { width: min(100%, 340px, max(250px, calc((100dvh - 452px) * .8))); }
+.talk-front p { overflow-wrap: anywhere; }
